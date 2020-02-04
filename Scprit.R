@@ -12,7 +12,7 @@ View(Concrete)
 
 mod1 = lm(Strength~., data = Concrete[sam,])
 
-par(mfrow=c(2,2))
+par(mfrow=c(1,1))
 plot(mod1)
 
 summary(mod1)
@@ -41,6 +41,23 @@ VIF(mod1)
 y = Concrete$Strength[-sam]
 ypred = predict(mod1,newdata = Concrete[-sam,])
 results = PredAcc(y,ypred)
+
+
+#1c
+
+ceresPlots(mod1)
+
+pairs.plus(Concrete)
+
+library(dplyr)
+
+Concrete %>%
+  select(-c(FineAge, CourseAgg)) -> Concrete2
+
+View(Concrete2)
+
+
+myB
 
 
 
