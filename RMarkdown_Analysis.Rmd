@@ -1,0 +1,10 @@
+---
+title: "Assignment2"
+author: "Samuel Andrews and Mikolaj Wieczorek"
+date: "2/3/2020"
+output: word_document
+---
+```{r}
+#cdknvc
+```
+
