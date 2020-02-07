@@ -8,7 +8,7 @@ set.seed(1)
 
 sam = sample(1:1030,size=floor(.6666*1030),replace=F)
 
-View(Concrete)
+View(Concrete[sam,])
 
 mod1 = lm(Strength~., data = Concrete[sam,])
 
@@ -57,8 +57,9 @@ Concrete %>%
 View(Concrete2)
 
 
-myB
+myBC()
 
 
+ceresPlot(mod1)
 
 
