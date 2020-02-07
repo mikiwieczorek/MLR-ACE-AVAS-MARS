@@ -68,6 +68,7 @@ d)	Fit a MARS model to the training data with degree = 1 (i.e. no interactions).
 
 We will use our variable transformed dataset.
 
+
 ```{r}
 #install.packages("earth")
 require(earth)
@@ -147,6 +148,7 @@ MAPE
 92.37868 
 
 
+e)	Fit a MARS model to the training with degree = 2 (i.e. including potential interactions).  Again use the internal cross-validation capabilities of the earth() function to choose the best degree = 2 MARS model for these data.   Again predict the compression strength of the concrete samples in the validation set in the original scale and compute RMSEP, MAEP, and MAPEP.  How does this compare to the earlier models?  Which predictors seem most important for predicting strength? (10 pts.)
 
 Next, we will try with degree 2, allowing interactions to be considered.
 
