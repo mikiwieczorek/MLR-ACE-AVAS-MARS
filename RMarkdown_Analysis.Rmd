@@ -80,7 +80,7 @@ plotmo(Concrete.mars)
 summary(Concrete.mars)
 
 ```
-Upon a quick runthrought of the Mars Method, we selected 17 terms from 7 predictors and got a GRSq of 0.860, which is impressive compared to the time required to due a more traditional Multiple Linear regression in order to achieve similar results. Still, we have yet to check the model using internal Cross-validation methods or after adjusting paramters, so we aren't done yet.
+Upon a quick runthrought of the Mars Method, we selected 16 terms from 8 predictors and got a GRSq of 0.854, which is impressive compared to the time required to due a more traditional Multiple Linear regression in order to achieve similar results. Still, we have yet to check the model using internal Cross-validation methods or after adjusting paramters, so we aren't done yet.
 ```{r}
 Concrete.mars = earth(Strength~.,data = Concrete.trans[sam,], degree = 1, keepxy = T, nfold = 10, ncross = 30 )
 
@@ -88,11 +88,11 @@ plot(Concrete.mars)
 
 ```
 
-Based on 10 Kfolds, crossing 30 times, we seem to consistantly picking 17-18 terms for our model when degree is 1, which bodes well for our intial attempt. We also should look at how variables are contributing to the model, just to make sure nothing seems out of wack.
+Based on 10 Kfolds, crossing 30 times, we seem to picking from 16 to 19 terms for our model when degree is 1, which is similar to our intial. We also should look at how variables are contributing to the model, just to make sure nothing seems out of wack.
 ```{r}
 evimp(Concrete.mars, trim = FALSE)
 ```
-As indicated by the summary, all but one of the variables are unused. This makes sense given what we learned through our MLR efforts, as CourseAgg tended to be a poor predictor simply in general and was decied to be left out for those models as well. Otherwise, like we found earlier age and cement seem to be big ticket contributors, while superplasta and flyash are weaker as indivdal. Although we should note that water is much more effective here, likely due to its structure being more akin to mappign vai checkmar functions than linear models with polynomial terms.
+As indicated by the summary, all but one of the variables are used. This is intereting  given what we learned through our MLR efforts, as CourseAgg tended to be a poor predictor simply in general and was decied to be left out for those models as well. Otherwise, like we found earlier age and cement seem to be big ticket contributors, while superplasta and flyash are weaker as indivdals. Although we should note that water is much more effective here, likely due to its structure being more akin to mappign vai checkmar functions than linear models with polynomial terms.
 
 For the sake of being thorough, we will also attempt this process again after goading the model to utilize less variables to see if it has any effect on the GRSq. Due to it already using almost everything, it makes little sense to force more, but a simpler model may potentially prove more effective. However, given what we know about out variables thus far, it seems unlikely that much success will be found as truncating from seven likely decrease our model.
 
@@ -118,13 +118,35 @@ summary(Concrete.mars2)
 evimp(Concrete.mars2, trim = FALSE)
 ```
 
-As expected, our GRSq lowered by a little over .10,  as well as other similar measures. While our k-fold cross validation does more concretly setttle on a specific nunmber of terms (5), the loss in predictive ability likely isn't worth it.
+As expected, our GRSq lowered by a little over .10,  as well as other similar measures. While our k-fold cross validation does more concretly setttle on a specific nunmber of terms (5), the massive loss in predictive ability likely isn't worth it. 
+
+Overall, while minor gains have been made in our favored metrics, it was decided that these small improvments were not worth taking hits to the conistancy, therefore the inital model was chosen despite some of its less desireable features.
 
 ```{r}
-### TODO: prediction here###
+#0.6
+
+ypredtransformed = predict(Concrete.mars, newdata = Concrete.trans[-sam,])
+
+ypred = ypredtransformed^(1/0.6)
+
+PredAcc(Concrete[-sam,]$Strength, ypred)
 
 
 ```
+
+RMSEP
+================
+37.61542 
+
+MAE
+================
+32.3783 
+
+MAPE
+================
+92.37868 
+
+
 
 Next, we will try with degree 2, allowing interactions to be considered.
 
@@ -134,7 +156,7 @@ Concrete.mars.deg2 = earth(Strength~.,data = Concrete.trans[sam,], degree = 2, k
 plot(Concrete.mars.deg2)
 
 ```
-Across 30 run-throughs, it seems to consitantly pick 19 terms.
+Across 30 run-throughs, it seems to sway between 17 and 19 terms.
 
 ```{r}
 plotmo(Concrete.mars.deg2)
@@ -147,7 +169,7 @@ evimp(Concrete.mars.deg2, trim = FALSE)
 ```
 
 
-With a GRSq of just over 0.04, with interaction, we get a slightly better model. We also are using less variables, despite there being more terms used. Flyash being removed makes sense, as it, like CourseAgg, was not very useful in MLR and had a structure that was difficult to work with. 
+With a GRSq of just of 0.841, with interaction, we get a slightly worse model. We also are using less variables, despite there being more terms used. CourseAgg being removed makes sense, as it was not very useful in MLR and had a structure that was difficult to work with. 
 
 Overall, adding interaction did not make a huge difference in our model's performance, however we may be able to widen the gap a bit if we adjust some parameters.
 
@@ -175,7 +197,7 @@ summary(Concrete.mars2.deg2)
 ```{r}
 evimp(Concrete.mars2.deg2, trim = FALSE)
 ```
-Pruning at 10 and leaving a max terms of 30 gives us an ultimatley weaker model, although we have manged to remain with measures above 0.8 whilst only using 10 terms, so simplicity does help.
+Pruning at 10 and leaving a max terms of 30 gives us an ultimatley weaker model, although we have manged to remain with measures above 0.8 whilst only using 10 terms. However, we the amount of varition across  folds is astounding with anywhere from 10 to 29 terms being used from run-through to run-through. Due to such inconsistancy, this iteration will likely be shelved.
 
 Next we'll try using no prunes but forcing a higher minimum, though this may risk overfitting the model. 
 
@@ -192,7 +214,7 @@ evimp(Concrete.mars3.deg2, trim = FALSE)
 ```{r}
 plot(Concrete.mars3.deg2)
 ```
-When forcing a higher minimum term count, we get a model with the best GRSq yet at 0.875 that hovers around 23 to 24 terms fairly consistantly. It also doesn't quite reach out limit of 25, so we are likely to have found the sweet spot for term counts. As on final iteration, we will try this same model but re-add in nprune to seee if less greed can increase it further.
+When forcing a higher minimum term count, we get a model with the best GRSq yet at about 0.861 that hovers between 15 and 25. Once again, it suffers from inconsistany, which is a considerable negative. for the next iteration, we will try this same model but re-add in nprune to seee if less greed can increase it further.
 
 ```{r}
 Concrete.mars4.deg2 = earth(Strength~.,data = Concrete.trans[sam,], degree = 2, keepxy = T, nfold = 10, ncross = 30 , nk = 25, nprune = 21)
@@ -210,7 +232,56 @@ evimp(Concrete.mars4.deg2, trim = FALSE)
 ```{r}
 plot(Concrete.mars4.deg2)
 ```
-Our result was much more variable, going from 21 to 23 terms across k-folds, was slightly weaker at about GRSq = 0.873, but is theroetically simpler. However, we have decided that the tighter variation in terms is likey more desireable, especiialy since the wider version overlaps with it. We'll see how it does on the validation set next.
+
+We get pretty much the same result other than minor variation not really worth discussing. As a result, this model continues to suffer from all of the same pitfalls as before with no real benefit. The only thing left to try that may help is reducing nk outright, to see if forcing a simpler model may fit something better after pruning.
+```{r}
+Concrete.mars5.deg2 = earth(Strength~.,data = Concrete.trans[sam,], degree = 2, keepxy = T, nfold = 10, ncross = 30 , nk = 15, nprune = 13)
+
+summary(Concrete.mars5.deg2)
+```
+
+```{r}
+evimp(Concrete.mars5.deg2, trim = FALSE)
+
+```
+
+
+```{r}
+plot(Concrete.mars5.deg2)
+```
+While this version is much more consistant, it fails to be as effective as just our initial degree 2 model, with it having a GRSq about 3% lower. For one final iteration, we will try to make a previous model more conistant with pruning by focusing on less prunes.
+
+```{r}
+Concrete.mars4.deg2.md = earth(Strength~.,data = Concrete.trans[sam,], degree = 2, keepxy = T, nfold = 10, ncross = 30 , nk = 25, nprune = 15)
+
+summary(Concrete.mars4.deg2.md)
+
+```
+```{r}
+evimp(Concrete.mars4.deg2.md, trim = FALSE)
+```
+
+```{r}
+plot(Concrete.mars4.deg2.md)
+```
+Alas, we once again arrive at the conondrum of minor improvements in the GRSq (about +0.2) in exchange for less consistency derrived from the internal CV methods. Favoring conistancy over vartion, we wil once again go with the defualt output from the mars function, as it seems like the best candiate among the ones we have manged to produce in contrast to it.
+
+```{r}
+#Predict
+ypredtransformed2 = predict(Concrete.mars.deg2, newdata = Concrete.trans[-sam,])
+
+ypred2 = ypredtransformed2^(1/0.6)
+
+PredAcc(Concrete[-sam,]$Strength, ypred2)
+```
+RMSEP
+36.99874 
+
+MAE
+31.79073 
+
+MAPE
+91.20575 
 
 
 
