@@ -4,7 +4,57 @@ author: "Samuel Andrews and Mikolaj Wieczorek"
 date: "2/3/2020"
 output: word_document
 ---
-```{r}
-#cdknvc
+```{r include=FALSE}
+library(car)
 ```
 
+# Problem 1
+
+```{r}
+Concrete = read.csv("Concrete.csv")
+set.seed(1)
+sam = sample(1:1030, size = floor(.6666*1030), replace = F)
+Concrete.trans = Concrete
+str(Concrete.trans)
+summary(Concrete.trans)
+```
+
+
+a)	Fit a MLR model with all variables in their original scales using the training data.  Summarize this model and discuss any model deficiencies. 
+
+```{r fig.height=15, fig.width=15}
+# BlastFurn, FlyAsh, and Superplast have zeros
+lm1 = lm(Strength~., data = Concrete.trans[sam,])
+par(mfrow=c(2,2))
+plot(lm1)
+```
+
+There is a little bit of constant variance - some transformation could help it.
+High leverage pulling the model to the right. We also have some outliers - but they are not that terrible in this case.
+Normality does not seem to be affected. There also seems to be some curvature present in the model.
+
+
+```{r}
+vif(lm1)
+VIF(lm1)
+```
+
+Multicollinearity does not seem to be an issue in this model as the variance inflation factor is not larger than 10 for predictors.
+
+```{r}
+#Check the training and validation sets nrow()
+nrow(Concrete.trans[sam,])
+nrow(Concrete.trans[-sam,])
+```
+
+b)	Use the model from part (a) to predict the response value using the validation data and compute the prediction accuracy (RMSEP,MAEP,MAPEP) of these predictions by comparing the actual compression strengths of the concrete samples in the validation set.  
+
+```{r}
+y = Concrete.trans$Strength[-sam]
+ypred = predict(lm1, newdata = Concrete.trans[-sam,])
+results = PredAcc(y, ypred)
+```
+
+RMSEP = 
+MAEP = 
+MAPEP = 
