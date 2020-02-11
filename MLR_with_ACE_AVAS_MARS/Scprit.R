@@ -106,7 +106,7 @@ abline(h=0,lwd=2,col="red")
 
 #Residuals vs Leverage: take out 57, 611, 225 cuz of leverage? Do it last
 #Do CERES plots
-
+#ceres plots to remove either superplast or poly
 #Let's add poly terms one at the time to our lm.trans model
 
 lm.poly = update(lm.trans, Strength~. + poly(Superplast, 2))
