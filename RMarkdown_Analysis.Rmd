@@ -6,23 +6,128 @@ output: word_document
 ---
 ```{r include=FALSE}
 library(car)
+library(Ecfun)
 ```
 
-# Problem 1
+```{r Functions, include=FALSE}
+PredAcc = function(y, ypred){
+  RMSEP = sqrt(mean((y-ypred)^2))
+  MAE = mean(abs(y-ypred))
+  MAPE = mean(abs(y-ypred)/y)*100
+  cat("RMSEP\n")
+  cat("================\n")
+  cat(RMSEP, "\n\n")
+  cat("MAE\n")
+  cat("================\n")
+  cat(MAE, "\n\n")
+  cat("MAPE\n")
+  cat("================\n")
+  cat(MAPE, "\n\n")
+  return(data.frame(RMSEP = RMSEP, MAE = MAE, MAPE = MAPE))
+  
+}
+
+myBC = function(y) {
+  require(car)
+  BCtran(y)
+  results = powerTransform(y)
+  summary(results)
+}
+
+kfold.MLR.log = function(fit,k=10) {
+  sum.sqerr = rep(0,k)
+  sum.abserr = rep(0,k)
+  sum.pererr = rep(0,k)
+  y = fit$model[,1]
+  y = exp(y)
+  x = fit$model[,-1]
+  data = fit$model
+  n = nrow(data)
+  folds = sample(1:k,nrow(data),replace=T)
+  for (i in 1:k) {
+    fit2 <- lm(formula(fit),data=data[folds!=i,])
+    ypred = predict(fit2,newdata=data[folds==i,])
+    sum.sqerr[i] = sum((y[folds==i]-ypred)^2)
+    sum.abserr[i] = sum(abs(y[folds==i]-ypred))
+    sum.pererr[i] = sum(abs(y[folds==i]-ypred)/y[folds==i])
+  }
+  cv = return(data.frame(RMSEP=sqrt(sum(sum.sqerr)/n),
+                         MAE=sum(sum.abserr)/n,
+                         MAPE=sum(sum.pererr)/n))
+}
+
+
+
+bootlog.cv = function(fit,B=100,data=fit$model) {
+  yt=fit$fitted.values+fit$residuals
+  yact = exp(yt)
+  yhat = exp(fit$fitted.values)
+  resids = yact - yhat
+  ASR=mean(resids^2)
+  AAR=mean(abs(resids))
+  APE=mean(abs(resids)/yact)
+  boot.sqerr=rep(0,B)
+  boot.abserr=rep(0,B)
+  boot.perr=rep(0,B)
+  y = fit$model[,1]
+  x = fit$model[,-1]
+  n = nrow(data)
+  for (i in 1:B) {
+    sam=sample(1:n,n,replace=T)
+    samind=sort(unique(sam))
+    temp=lm(formula(fit),data=data[sam,])
+    ytp=predict(temp,newdata=data[-samind,])
+    ypred = exp(ytp)
+    boot.sqerr[i]=mean((exp(y[-samind])-ypred)^2)
+    boot.abserr[i]=mean(abs(exp(y[-samind])-ypred))
+    boot.perr[i]=mean(abs(exp(y[-samind])-ypred)/exp(y[-samind]))
+  }
+  ASRo=mean(boot.sqerr)
+  AARo=mean(boot.abserr)
+  APEo=mean(boot.perr)
+  OPsq=.632*(ASRo-ASR)
+  OPab=.632*(AARo-AAR)
+  OPpe=.632*(APEo-APE)
+  RMSEP=sqrt(ASR+OPsq)
+  MAEP=AAR+OPab
+  MAPEP=(APE+OPpe)*100
+  cat("RMSEP\n")
+  cat("===============\n")
+  cat(RMSEP,"\n\n")
+  cat("MAE\n")
+  cat("===============\n")
+  cat(MAEP,"\n\n")
+  cat("MAPE\n")
+  cat("===============\n")
+  cat(MAPEP,"\n\n")
+  return(data.frame(RMSEP=RMSEP,MAE=MAEP,MAPE=MAPEP))  
+}
+
+```
+
+
+```{r}
+load("~/OneDrive - MNSCU/myGithub/Statistics/Regression_models/Multiple_Linear_Regression/MLR-ACE-AVAS-MARS/mult.Rdata")
+load("~/OneDrive - MNSCU/myGithub/Statistics/Regression_models/Multiple_Linear_Regression/MLR-ACE-AVAS-MARS/Regression.Rdata")
+```
+
+# PROBLEM 1
 
 ```{r}
 Concrete = read.csv("Concrete.csv")
 set.seed(1)
 sam = sample(1:1030, size = floor(.6666*1030), replace = F)
 Concrete.trans = Concrete
-str(Concrete.trans)
-summary(Concrete.trans)
+#str(Concrete.trans)
+#summary(Concrete.trans)
 ```
 
 
-a)	Fit a MLR model with all variables in their original scales using the training data.  Summarize this model and discuss any model deficiencies. 
+## PART A	
 
-```{r fig.height=15, fig.width=15}
+Fit a MLR model with all variables in their original scales using the training data.  Summarize this model and discuss any model deficiencies. 
+
+```{r fig.height=10, fig.width=10}
 # BlastFurn, FlyAsh, and Superplast have zeros
 lm1 = lm(Strength~., data = Concrete.trans[sam,])
 par(mfrow=c(2,2))
@@ -30,12 +135,11 @@ plot(lm1)
 ```
 
 There is a little bit of constant variance - some transformation could help it.
-High leverage pulling the model to the right. We also have some outliers - but they are not that terrible in this case.
-Normality does not seem to be affected. There also seems to be some curvature present in the model.
+High leverage pulling the model to the right. We also have some outliers. They are not, however, that terrible in this case.Normality does not seem to be affected. But there also seems to be some curvature present that our current model is not addressing.
 
 
 ```{r}
-vif(lm1)
+#vif(lm1)
 VIF(lm1)
 ```
 
@@ -47,23 +151,353 @@ nrow(Concrete.trans[sam,])
 nrow(Concrete.trans[-sam,])
 ```
 
-b)	Use the model from part (a) to predict the response value using the validation data and compute the prediction accuracy (RMSEP,MAEP,MAPEP) of these predictions by comparing the actual compression strengths of the concrete samples in the validation set.  
+## PART B	
+
+Use the model from part (a) to predict the response value using the validation data and compute the prediction accuracy (RMSEP,MAEP,MAPEP) of these predictions by comparing the actual compression strengths of the concrete samples in the validation set.  
+
+Our model's name from part (a) is <b>lm1</b>
 
 ```{r}
-y = Concrete.trans$Strength[-sam]
-ypred = predict(lm1, newdata = Concrete.trans[-sam,])
-results = PredAcc(y, ypred)
+#Predicting
+y = Concrete$Strength[-sam]
+ypred = predict(lm1, newdata = Concrete[-sam,])
+MLR_orig = PredAcc(Concrete[-sam,]$Strength, ypred)
 ```
 
-RMSEP = 
-MAEP = 
-MAPEP = 
+RMSEP = 10.19
+MAEP = 8.08
+MAPEP = 32.59%
+
+```{r}
+summary(lm1)$r.squared*100
+```
+R^2 training data: 61.38%
+
+
+```{r}
+summary(update(lm1, Strength~., data = Concrete[-sam,]))$r.squared*100
+```
+
+Validation data: R^2 = 62.52%
+
+```{r}
+##Actual vs. predicted
+ehat = y-ypred
+trendscat(y, ypred, xlab = "Actual Strentgh", ylab = "Predicted Strength")
+abline(0,1,lwd=2,col='red')
+trendscat(ypred, ehat, xlab = "Predicted Strength of Concrete", ylab = "Residuals")
+abline(h=0,lwd=2,col="red")
+```
 
 
 
+To improve our model, we are going to use the stepwise selection method:
+
+## PART C 
+
+Use tools such as Box-Cox transformations, CERES plots, ACE/AVAS, and stepwise model selection to create and choose terms and choose a potential response transformation to address the deficiencies exhibited by the model from part (a). You should explain what tools you used and give a summary of your final MLR model selected.  This model should not have the deficiencies identified in part (a). Use this model to predict the compression strength of the validation case in the ORIGINAL SCALE (MPa).  Compute the prediction accuracy measures (RMSEP, MAEP, MAPEP) and compare to the results from part (b).  Does your more complex MLR model do a better job in terms of these prediction accuracy measures?  If it doesn’t you might rethink your model. (10 pts.)
+
+```{r}
+#Stepwise: mixed model on lm1
+lm1.step = step(lm1)
+lm1.step$anova
+summary(lm1)
+
+```
+It removes CourseAgg and Fine Age. We are deciding to remove the two predictors before conducting any transformations. Also, the p-values  of those two predictors in the lm1 model were not significant.
+
+```{r}
+lm2 = update(lm1, Strength~. - CourseAgg - FineAge, data = Concrete.trans[sam,])
+lm2.step = step(lm2)
+
+```
+```{r}
+lm2.step$anova
+```
+Now, it is not removing any more predictors based on the Akaike's information criterion.
+
+```{r fig.height=10, fig.width=10}
+#Let's plot our model
+par(mfrow=c(2,2))
+plot(lm2.step)
+```
+<br> There still seems to be some curvature present in our model - we might want to consider doing some transformations.
+
+```{r fig.height=15, fig.width=15}
+#Now, we're going to transform and add polynomial terms
+#Check for skewness with pairs.plus
+pairs.plus(Concrete.trans)
+```
+
+CourseAgg and FineAge are removed, so we do not consider them.
+Because they are the most right-skewed, we will consider transforming variables such as Age, Superplast, FlyAsh, and BlastBurn. We will also look at Cement, Water, and the resposne Strength to check if the transforming them would make the distribution look better.
 
 
-d)	Fit a MARS model to the training data with degree = 1 (i.e. no interactions).  Use the internal cross-validation features of the earth() function to choose the “best” MARS model with degree = 1.  Again predict the compression strength of the concrete samples in the validation set in the original scale and compute RMSEP, MAEP, and MAPEP.  How does this compare to the models in part (a) and (c)?  (10 pts.)
+```{r}
+#Log age
+myBC(Concrete.trans$Age)
+Concrete.trans$Age = log(Concrete.trans$Age)
+Statplot(Concrete.trans$Age)
+```
+
+Logging it may seems better.
+
+```{r}
+#lambda .3 for Superplast
+myBC(Concrete.trans$Superplast+1)
+Concrete.trans$Superplast = yjPower(Concrete.trans$Superplast, 0.3)
+Statplot(Concrete.trans$Superplast)
+```
+
+```{r}
+#lambda -0.1 for FlyAsh
+myBC(Concrete.trans$FlyAsh+1)
+Concrete.trans$BlastFurn = yjPower(Concrete.trans$FlyAsh, -0.1)
+Statplot(Concrete.trans$FlyAsh)
+```
+
+```{r}
+#lamda = -0.4 for BlastFurn
+myBC(Concrete.trans$BlastFurn+1)
+Concrete.trans$BlastFurn = log(Concrete.trans$BlastFurn+1)
+Statplot(Concrete.trans$BlastFurn)
+```
+
+```{r}
+#lambda .2
+myBC(Concrete.trans$Cement)
+Concrete.trans$Cement = bcPower(Concrete.trans$Cement, 0.2)
+Statplot(Concrete.trans$Cement)
+```
+
+```{r}
+#water .8
+myBC(Concrete.trans$Water)
+Concrete.trans$Water = bcPower(Concrete.trans$Water, 0.8)
+Statplot(Concrete.trans$Water)
+```
+
+```{r}
+#myBC(Concrete.trans$Strength)
+#Concrete.trans$Strength = log(Concrete.trans$Strength)
+Concrete.trans$Strength = bcPower(Concrete.trans$Strength, 0.6)
+Statplot(Concrete.trans$Strength)
+#Make sure to take the 0.6th root of the response when predicting on the validation set to have it be back in its original scale
+```
+
+<b>lm2.step</b> is the model after removing the CourseAgg and FineAge predictors. We are going to update the model with the data that we have applied the above transformations to.
+
+```{r}
+lm.trans = update(lm2.step, Strength~. , data = Concrete.trans[sam,])
+```
+
+```{r}
+#Plot the lm.trans model to see how it looks like now
+par(mfrow=c(2,2))
+plot(lm.trans)
+```
+There still seems to be some curvature present in the model. Let's check how we are predicting so far:
+
+```{r}
+##Actual vs. predicted
+
+#Original scale
+#invBoxCox(2, 0)
+#This function will
+```
+This function is invBoxCox(transformed, lambda). If we logged a reposne, we would use the function as such: invBoxCox(ypred, 0) and this would do the same computation as exp(ypred). Check the function: 
+
+```{r}
+#Transformed
+summary(Concrete.trans$Strength)
+#Original scale
+summary(Concrete$Strength)
+```
+```{r}
+check = invBoxCox(Concrete.trans$Strength, 0.6)
+summary(check)
+summary(Concrete$Strength)
+```
+
+Thus, for our case, we took the resposne to the power of lambda = 0.6, and we will bring it back to the original scale by doing this:
+```{r}
+require(Ecfun)
+y = Concrete$Strength[-sam]
+ypred = predict(lm.trans, newdata = Concrete.trans[-sam,])
+ypred.orig = invBoxCox(ypred, 0.6)
+```
+
+```{r}
+results.trans = PredAcc(y, ypred.orig)
+```
+```{r}
+results.trans
+```
+```{r}
+summary(lm.trans)
+```
+
+The model is performing better than the original so far with R^2 of 74.61%.
+
+Let's look at the predictors and their relationships with the resposne first by using CERES plots:
+
+```{r fig.height=10, fig.width=10}
+#CERES plots with lm2.step
+ceresPlots(lm2.step)
+```
+It seems like Superplast and Age would definitely need some adjustment for functional form. FlyAsh also seems like it's having some curvature there.
+
+Let's add poly terms one at the time to our lm.trans model
+
+```{r}
+lm.poly = update(lm.trans, Strength~. + poly(Water, 2))
+data.frame(R.sq = c(summary(lm.poly)$r.squared*100), Adj.R.sq=c(summary(lm.poly)$adj.r.squared*100))
+```
+
+
+```{r}
+lm.poly = update(lm.trans, Strength~. + poly(Age, 3))
+data.frame(R.sq = c(summary(lm.poly)$r.squared*100), Adj.R.sq=c(summary(lm.poly)$adj.r.squared)*100)
+```
+
+```{r}
+lm.poly = update(lm.trans, Strength~. + poly(Age, 3) + poly(Water, 2))
+data.frame(R.sq = c(summary(lm.poly)$r.squared*100), Adj.R.sq=c(summary(lm.poly)$adj.r.squared)*100)
+```
+
+```{r}
+lm.poly = update(lm.trans, Strength~. + poly(Superplast, 2))
+data.frame(R.sq = c(summary(lm.poly)$r.squared*100), Adj.R.sq=c(summary(lm.poly)$adj.r.squared)*100)
+```
+However, just by adding a Superplast polynomial degree=2, the R^2 went up. Also, let's look at the significance of the predictors in this model by looking at the p-values:
+```{r}
+summary(lm.poly)
+```
+
+Water and FlyAsh are not significant right now. But let's keep going and check with some more polies.
+
+```{r}
+lm.poly = update(lm.trans, Strength~. + poly(Superplast, 2) + poly(Age,3))
+data.frame(R.sq = c(summary(lm.poly)$r.squared*100), Adj.R.sq=c(summary(lm.poly)$adj.r.squared)*100)
+```
+
+```{r}
+lm.poly = update(lm.trans, Strength~. + poly(Superplast, 2) + poly(Age,3) + poly(Water, 2))
+data.frame(R.sq = c(summary(lm.poly)$r.squared*100), Adj.R.sq=c(summary(lm.poly)$adj.r.squared)*100)
+
+```
+
+Plus in this model, FlyAsh has a significant p-value. So only Water is not a significant predictor right now.
+
+```{r}
+lm.poly = update(lm.trans, Strength~. + poly(Superplast, 2) + poly(Age,3) + poly(Water, 2) + poly(FlyAsh, 2))
+data.frame(R.sq = c(summary(lm.poly)$r.squared*100), Adj.R.sq=c(summary(lm.poly)$adj.r.squared)*100)
+
+```
+Now, adding FlyAsh made the adjusted R^2 go down - FlyAsh poly does not benefit this model.
+
+```{r}
+lm.poly = update(lm.trans, Strength~. + poly(Superplast, 2) + poly(FlyAsh, 2))
+data.frame(R.sq = c(summary(lm.poly)$r.squared*100), Adj.R.sq=c(summary(lm.poly)$adj.r.squared)*100)
+
+```
+And just by having FlyAsh and Superplast polies by themselves does not make the model explain more variation.
+
+We are going to keep the following polies:
+
+- Age, degree=3 and Water, degree=2 and Superplast, degree=2
+
+
+```{r}
+lm.poly = update(lm.trans, Strength~. + poly(Superplast, 2) + poly(Age,3) + poly(Water, 2))
+data.frame(R.sq = c(summary(lm.poly)$r.squared*100), Adj.R.sq=c(summary(lm.poly)$adj.r.squared)*100)
+summary(lm.poly)
+```
+
+Now, we need to adjust for the NA of some repetitive predictors in the model: Superplast is the same as poly(Superplast, 2)1; Age is the same as poly(Age, 3)1; and Water is the same as poly(Water, 2)1.
+```{r}
+lm.poly.2 = step(lm.poly)
+```
+
+```{r}
+lm.poly.2$anova
+```
+But Superplast, Water, and Age stayed in as polies of first degree - as mentioned above, they are they were representing the same terms.
+
+Let's check back how we are predicting so far:
+```{r}
+require(Ecfun)
+y = Concrete$Strength[-sam]
+ypred = predict(lm.poly.2, newdata = Concrete.trans[-sam,])
+ypred.orig = invBoxCox(ypred, 0.6)
+```
+
+
+```{r include=FALSE}
+results.poly = PredAcc(y, ypred.orig)
+```
+```{r}
+results.trans
+results.poly
+```
+With the polynomials added to our model, all of our prediction accuracy metrics went down. Great so far.
+
+
+Lastly, let's consider ACE/AVAS and confirm if the transformations we did so far are in fact the recomended ones. We are going to choose AVAS because it is better and agrees with the analyses we conducted with Box-Cox and CERES plots.
+
+```{r}
+require(acepack)
+Concrete.ace_avas = Concrete
+```
+
+
+```{r}
+#Create X matrix of all predictors and y vector of the response
+X = model.matrix(Strength~., data =Concrete.ace_avas)[,-1]
+```
+
+```{r}
+y = Concrete.ace_avas$Strength
+ace = ace(X,y)
+#par(mfrow=c(4,4))
+maceplot(X,y,ace)
+```
+
+FineAge and CourseAgg were removed with the stepwise at the begining. Age, SuperPlast, and Water graphs do show needed transformations. Water looks like a cubic here; FlyAsh like a quadratic; and Age like a square root.
+
+Let's look at AVAS - which is usually more adept than ACE at finding the optimal transformations.
+
+```{r}
+require(acepack)
+avas = avas(X,y)
+maceplot(X,y,avas)
+```
+
+By looking at the plots results from AVAS, it seems like Water should have, after all, a quadriatic transformation; FlyAsh, Cement, and BlastFurn are very close to linear - so we are not going to be changing their functional forms; Superplast seems quadriatic; and Age once again seems like a square root. These transformations seem to check out with what we inferred from CERES plots and Box-Cox power transformations.
+
+
+
+Our results from the final model are: <b> lm.poly2 </b>
+
+R^2 from training:
+```{r}
+summary(lm.poly.2)$r.squared*100
+```
+
+R^2 from predicting validation set:
+```{r}
+summary(update(lm.poly.2, Strength~., data = Concrete.trans[-sam,]))$r.squared*100
+```
+
+Prediction Accuracy metrics:
+```{r}
+results.poly
+```
+
+
+## PART D	
+
+Fit a MARS model to the training data with degree = 1 (i.e. no interactions).  Use the internal cross-validation features of the earth() function to choose the “best” MARS model with degree = 1.  Again predict the compression strength of the concrete samples in the validation set in the original scale and compute RMSEP, MAEP, and MAPEP.  How does this compare to the models in part (a) and (c)?  (10 pts.)
 
 
 We will use our variable transformed dataset.
@@ -81,7 +515,7 @@ plotmo(Concrete.mars)
 summary(Concrete.mars)
 
 ```
-Upon a quick runthrought of the Mars Method, we selected 16 terms from 8 predictors and got a GRSq of 0.854, which is impressive compared to the time required to due a more traditional Multiple Linear regression in order to achieve similar results. Still, we have yet to check the model using internal Cross-validation methods or after adjusting paramters, so we aren't done yet.
+Upon a quick runthrought of the Mars Method, we selected 16 terms from 8 predictors and got a GRSq of 0.857, which is impressive compared to the time required to due a more traditional Multiple Linear regression in order to achieve similar results. Still, we have yet to check the model using internal Cross-validation methods or after adjusting paramters, so we aren't done yet.
 ```{r}
 Concrete.mars = earth(Strength~.,data = Concrete.trans[sam,], degree = 1, keepxy = T, nfold = 10, ncross = 30 )
 
@@ -123,32 +557,36 @@ As expected, our GRSq lowered by a little over .10,  as well as other similar me
 
 Overall, while minor gains have been made in our favored metrics, it was decided that these small improvments were not worth taking hits to the conistancy, therefore the inital model was chosen despite some of its less desireable features.
 
+
 ```{r}
-#0.6
-
+#Predict
 ypredtransformed = predict(Concrete.mars, newdata = Concrete.trans[-sam,])
-
-ypred = ypredtransformed^(1/0.6)
-
+ypred = invBoxCox(ypredtransformed, 0.6)
+#ypred = ypredtransformed^(1/0.6)
 PredAcc(Concrete[-sam,]$Strength, ypred)
-
-
 ```
 
-RMSEP
-================
-37.61542 
+RMSEP = 6.92
+MAE = 5.27
+MAPE = 17.41%
 
-MAE
-================
-32.3783 
-
-MAPE
-================
-92.37868 
+R^2 from training:
+```{r}
+summary(Concrete.mars)
+```
+R^2 from training: 86.94%
 
 
-e)	Fit a MARS model to the training with degree = 2 (i.e. including potential interactions).  Again use the internal cross-validation capabilities of the earth() function to choose the best degree = 2 MARS model for these data.   Again predict the compression strength of the concrete samples in the validation set in the original scale and compute RMSEP, MAEP, and MAPEP.  How does this compare to the earlier models?  Which predictors seem most important for predicting strength? (10 pts.)
+R^2 from predicting validation set:
+```{r}
+summary(update(Concrete.mars, Strength~., data = Concrete.trans[-sam,]))
+```
+
+R^2 from validation set: 84.92%
+
+## PART E	
+
+Fit a MARS model to the training with degree = 2 (i.e. including potential interactions).  Again use the internal cross-validation capabilities of the earth() function to choose the best degree = 2 MARS model for these data.   Again predict the compression strength of the concrete samples in the validation set in the original scale and compute RMSEP, MAEP, and MAPEP.  How does this compare to the earlier models?  Which predictors seem most important for predicting strength? (10 pts.)
 
 Next, we will try with degree 2, allowing interactions to be considered.
 
@@ -266,24 +704,34 @@ evimp(Concrete.mars4.deg2.md, trim = FALSE)
 ```{r}
 plot(Concrete.mars4.deg2.md)
 ```
-Alas, we once again arrive at the conondrum of minor improvements in the GRSq (about +0.2) in exchange for less consistency derrived from the internal CV methods. Favoring conistancy over vartion, we wil once again go with the defualt output from the mars function, as it seems like the best candiate among the ones we have manged to produce in contrast to it.
+Alas, we once again arrive at the conondrum of minor improvements in the GRSq (about +0.2) in exchange for less consistency derrived from the internal CV methods. Favoring conistancy over vartion, we wil once again go with the defualt output from the mars function, as it seems like the best candidate among the ones we have managed to produce in contrast to it.
 
 ```{r}
 #Predict
 ypredtransformed2 = predict(Concrete.mars.deg2, newdata = Concrete.trans[-sam,])
-
-ypred2 = ypredtransformed2^(1/0.6)
+ypred2 = invBoxCox(ypredtransformed2, 0.6)
+#ypred2 = ypredtransformed2^(1/0.6)
 
 PredAcc(Concrete[-sam,]$Strength, ypred2)
 ```
-RMSEP
-36.99874 
+RMSEP = 7.29
 
-MAE
-31.79073 
+MAE = 5.34
 
-MAPE
-91.20575 
+MAPE = 18.05%
 
+R^2 from training:
+```{r}
+summary(Concrete.mars.deg2)
+```
+
+R^2 from training: 86.93%
+
+R^2 from predicting validation set:
+```{r}
+summary(update(Concrete.mars.deg2, Strength~., data = Concrete.trans[-sam,]))
+```
+
+R^2 from validation set: 86.51%
 
 
