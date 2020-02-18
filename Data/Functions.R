@@ -90,3 +90,39 @@ bootlog.cv = function(fit,B=100,data=fit$model) {
   cat(MAPEP,"\n\n")
   return(data.frame(RMSEP=RMSEP,MAE=MAEP,MAPE=MAPEP))  
 }
+
+
+nnet.sscv = function(x,y,fit,data,p=.667,B=10,size=5,decay=.001,skip=F,linout=T,maxit=25000) {
+  require(nnet)
+  n = length(y)
+  MSEP = rep(0,B)
+  MAEP = rep(0,B)
+  MAPEP = rep(0,B)
+  ss = floor(n*p)
+  for (i in 1:B) {
+    sam = sample(1:n,ss,replace=F)
+    fit2 = nnet(formula(fit),size=size,linout=linout,skip=skip,decay=decay,maxit=maxit,
+                trace=F,data=data[sam,])
+    yhat = predict(fit2,newdata=x[-sam,])
+    ypred = exp(yhat)
+    yact = exp(y[-sam])
+    MSEP[i] = mean((ypred-yact)^2)
+    MAEP[i] = mean(abs(ypred-yact))
+    MAPEP[i] = mean(abs(ypred-yact)/yact)
+  }
+  RMSEP = sqrt(mean(MSEP))
+  MAE = mean(MAEP)
+  MAPE = mean(MAPEP)
+  cat("RMSEP\n")
+  cat("=============================\n")
+  cat(RMSEP,"\n\n")
+  cat("MAE\n")
+  cat("=============================\n")
+  cat(MAE,"\n\n")
+  cat("MAPE\n")
+  cat("=============================\n")
+  cat(MAPE*100,"\n\n")
+  temp = data.frame(RMSEP=sqrt(MSEP),MAEP=MAEP,MAPEP=MAPEP*100)
+  return(temp)
+}
+
