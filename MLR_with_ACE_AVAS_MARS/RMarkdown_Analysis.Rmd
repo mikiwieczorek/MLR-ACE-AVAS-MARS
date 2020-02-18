@@ -9,6 +9,7 @@ output:
 ```{r include=FALSE}
 library(car)
 library(Ecfun)
+library(gridExtra)
 ```
 
 ```{r Functions, include=FALSE}
@@ -737,4 +738,20 @@ summary(update(Concrete.mars.deg2, Strength~., data = Concrete.trans[-sam,]))
 
 R^2 from validation set: 86.51%
 data.frame("Method Model" = c("MLR orgi", "MLR trans", "MARS deg 1", "MARS deg 2"), "R.squared from training %" = c(61.68, 77.33, 86.94, 86.93),"R.squared from validation %" = c(62.52, 75.16, 84.92, 86.51), "RMSEP_MPa" = c(10.19, 8.77, 6.92, 7.29), "MAEP_MPa" = c(8.08, 6.86, 5.27, 5.34), "MAPEP %" = c(32.59, 22.25, 17.41, 18.05))
+
+  Method.Model R.squared.from.training.. R.squared.from.validation.. RMSEP_MPa MAEP_MPa MAPEP..
+1     MLR orgi                     61.68                       62.52     10.19     8.08   32.59
+2    MLR trans                     77.33                       75.16      8.77     6.86   22.25
+3   MARS deg 1                     86.94                       84.92      6.92     5.27   17.41
+4   MARS deg 2                     86.93                       86.51      7.29     5.34   18.05
+
+```{r eval=FALSE, include=FALSE}
+png(filename = "final_table.png", width=680,height=480,bg = "white")
+grid.table(table.df)
+dev.off()
+```
+
+```{r}
+table.df
+```
 
