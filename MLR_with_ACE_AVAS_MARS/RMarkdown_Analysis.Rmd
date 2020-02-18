@@ -1,8 +1,10 @@
 ---
-title: "Assignment2"
+title: "MLR with ACE/AVAS and MARS"
 author: "Samuel Andrews and Mikolaj Wieczorek"
 date: "2/3/2020"
-output: word_document
+output: 
+  md_document:
+      variant: markdown_github
 ---
 ```{r include=FALSE}
 library(car)
@@ -105,21 +107,22 @@ bootlog.cv = function(fit,B=100,data=fit$model) {
 
 ```
 
-
 ```{r}
-load("~/OneDrive - MNSCU/myGithub/Statistics/Regression_models/Multiple_Linear_Regression/MLR-ACE-AVAS-MARS/mult.Rdata")
-load("~/OneDrive - MNSCU/myGithub/Statistics/Regression_models/Multiple_Linear_Regression/MLR-ACE-AVAS-MARS/Regression.Rdata")
+load("~/OneDrive - MNSCU/myGithub/Statistics/Regression_models/Multiple_Linear_Regression/MLR-ACE-AVAS-MARS/Data/mult.Rdata")
+load("~/OneDrive - MNSCU/myGithub/Statistics/Regression_models/Multiple_Linear_Regression/MLR-ACE-AVAS-MARS/Data/Regression.Rdata")
 ```
 
 # PROBLEM 1
 
 ```{r}
+setwd("~/OneDrive - MNSCU/myGithub/Statistics/Regression_models/Multiple_Linear_Regression/MLR-ACE-AVAS-MARS/Data")
 Concrete = read.csv("Concrete.csv")
 set.seed(1)
 sam = sample(1:1030, size = floor(.6666*1030), replace = F)
 Concrete.trans = Concrete
 #str(Concrete.trans)
 #summary(Concrete.trans)
+setwd("~/OneDrive - MNSCU/myGithub/Statistics/Regression_models/Multiple_Linear_Regression/MLR-ACE-AVAS-MARS/MLR_with_ACE_AVAS_MARS")
 ```
 
 
@@ -733,5 +736,5 @@ summary(update(Concrete.mars.deg2, Strength~., data = Concrete.trans[-sam,]))
 ```
 
 R^2 from validation set: 86.51%
-
+data.frame("Method Model" = c("MLR orgi", "MLR trans", "MARS deg 1", "MARS deg 2"), "R.squared from training %" = c(61.68, 77.33, 86.94, 86.93),"R.squared from validation %" = c(62.52, 75.16, 84.92, 86.51), "RMSEP_MPa" = c(10.19, 8.77, 6.92, 7.29), "MAEP_MPa" = c(8.08, 6.86, 5.27, 5.34), "MAPEP %" = c(32.59, 22.25, 17.41, 18.05))
 
