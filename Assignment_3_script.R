@@ -237,3 +237,16 @@ nnet.sscv.undobc(X,Y,concrete.nn5, B = 30, size = 7, maxit = 100000, decay = 0.0
 
 
 nnet.sscv.undobc(X,Y,concrete.nn5, B = 30, size = 8, maxit = 100000, decay = 3, linout = T)
+
+
+concrete.nnfinal = nnet(Strength~., data = Concrete.trans, size = 9, linout = T, skip = T, maxit = 100000, decay = 0.01   )
+
+
+cor(Concrete.trans$Strength, fitted(concrete.nnfinal))^2
+
+
+trendscat(Concrete.trans$Strength, fitted(concrete.nnfinal), xlab = "Strength", ylab = "Fitted Values (Strength)", main = "Actual vs.Prexited (0.6th Power Scale)")
+
+
+trendscat(invBoxCox(Concrete.trans$Strength, 0.6), invBoxCox(fitted(concrete.nnfinal), 0.6), xlab = "Strength", ylab = "Fitted Values (Strength)", main = "Actual vs. Precited Unscaled")
+
