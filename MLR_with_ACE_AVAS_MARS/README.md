@@ -5,7 +5,8 @@ Concrete is the most important material in civil engineering. The concrete compr
 
 # Data
 
-[Concrete.csv](Machine-Learning-Supervised-Learning/Data/) <br>
+[Concrete.csv](https://github.com/mikiwieczorek/Machine-Learning-Supervised-Learning/tree/master/Data) 
+<br>
 The data is provided by Dr. Brant Deppa.
 
 Variable Information:
