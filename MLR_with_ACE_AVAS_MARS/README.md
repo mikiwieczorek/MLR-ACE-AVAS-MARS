@@ -1,10 +1,35 @@
+Predicting Strength of Concrete
+===============================
+
+Concrete is the most important material in civil engineering. The concrete compressive strength is thought to be a highly nonlinear function of age and ingredients.
+
+# Data
+
+[Concrete.csv](Data/) <br>
+The data is provided by Dr. Brant Deppa.
+
+Variable Information:
+These data come from a collection of 17 experiments where the compressive strength (MPa) of concrete was determined under different formulations and length of curing (days).  These data consist of n = 1030 observations on nine variables (8 predictors and 1 response).  There are no cases with missing values.
+
+Name / Data Type / Description/Measurement Units
+- Cement (X_1) - continuous – kg of cement per cubic meter of concrete (kg⁄(m^3))
+- Blast Furnace Slag (X_2) - continuous – kg of slag per cubic meter of concrete (kg⁄(m^3))
+- Fly Ash (X_3) - continuous -- kg of fly ash per cubic meter of concrete (kg⁄(m^3))
+- Water (X_4) - continuous -- kg of water per cubic meter of concrete (kg⁄(m^3))
+- Superplasticizer (X_5) - continuous -- kg of superplasticizer per cubic meter of concrete (kg⁄(m^3))
+- Coarse Aggregate (X_6) - continuous -- kg of course aggregate per cubic meter of concrete (kg⁄(m^3)) 
+- Fine Aggregate (X_7) - continuous -- kg of fine aggregate per cubic meter of concrete (kg⁄(m^3))
+- Age (X_7) - discrete – age of concrete measured in days (1-365)
+- Concrete compressive strength (Y) - continuous – compressive strength in megapascals (MPa)
+
+Data source:  I-Cheng Yeh, "Modeling of strength of high performance concrete using artificial neural networks," Cement and Concrete Research, Vol. 28, No. 12, pp. 1797-1808 (1998)
+
+
 ``` r
 load("~/OneDrive - MNSCU/myGithub/Statistics/Regression_models/Multiple_Linear_Regression/MLR-ACE-AVAS-MARS/Data/mult.Rdata")
 load("~/OneDrive - MNSCU/myGithub/Statistics/Regression_models/Multiple_Linear_Regression/MLR-ACE-AVAS-MARS/Data/Regression.Rdata")
 ```
 
-PROBLEM 1
-=========
 
 ``` r
 setwd("~/OneDrive - MNSCU/myGithub/Statistics/Regression_models/Multiple_Linear_Regression/MLR-ACE-AVAS-MARS/Data")
