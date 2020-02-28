@@ -1,0 +1,87 @@
+---
+title: "Assignment_4_Sam_Mikolaj"
+output: html_document
+---```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+
+```{r}
+
+#libraries
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+require(nnet)
+require(Ecfun)
+require(car)
+require(ISLR)
+require(MASS)
+require(glmnet)
+
+
+#setup
+
+
+
+College2 = data.frame(PctAccept=100*(College$Accept/College$Apps),College[,-c(2:3)])
+
+
+attach(College)
+
+College4 = data.frame(logApps=log(Apps),Private,logAcc=log(Accept),logEnr=log(Enroll),Top10perc,
+                      Top25perc,logFull=log(F.Undergrad),logPart=log(P.Undergrad),Outstate,Room.Board,Books,Personal,PhD,Terminal,S.F.Ratio,perc.alumni,logExp=log(Expend),Grad.Rate)
+
+detach(College)
+
+
+
+```
+
+#1
+
+
+a)	Split the data into a training set and a test set by forming the indices for the training and test sets.  Use p = .667, i.e. use two-thirds of the data to train the models.  Note: That none of commands below show fitting to just a training set!  (1 pt.)
+
+```{r}
+set.seed(1)
+sam = sample(1:length(y), size = floor(.6666*1030), replace = F)
+
+```
+
+We created this index vector (where length y is the number of rows) to be used as a way to single out a training and test set
+
+
+
+b)  Fit an OLS model for number of applications using the training set, and report the mean RMSEP for the test set.  (4 pts.)
+
+```{r}
+
+X = model.matrix(PctAccept~.,data=College2)[,-1]
+y = College2$PctAccept
+Xs = scale(X)
+College2.temp = data.frame(y,Xs)
+PA.ols = lm(y~Xs,data=College2.temp,subset=sam)
+ypred = predict(PA.ols,newdata=College2.temp[-sam,])
+RMSEP.ols = sqrt(mean((y[-sam]-ypred)^2))
+RMSEP.ols
+```
+
+> RMSEP.ols
+[1] 16.82557
+
+
+c)	Fit a sequence of ridge and lasso regression models on the training data set using the commands below given for the ridge models. The lambda sequence (grid) is formed to create the sequence of models. Create two plots showing the parameter shrinkage, one with the norm constraint on the x-axis and one with log lambda values on the x-axis.  Discuss. (6 pts.)
+
+```{r}
+grid = 10^seq(10,-2,length=200)
+ridge.mod = glmnet(Xs[sam,],y[sam],alpha=0,lambda=grid)
+
+lasso.mod = glmnet(Xs[sam,],y[sam],alpha=1,lambda=grid)
+
+plot(ridge.mod) 
+
+```
+
+
+
