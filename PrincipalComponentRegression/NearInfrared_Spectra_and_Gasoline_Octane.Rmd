@@ -17,7 +17,6 @@ library(ISLR)
 library(MASS)
 library(glmnet)
 library(pls)
-
 library(corrplot)
 ```
 
@@ -250,7 +249,7 @@ title(main="Spectral Readings for Gasoline Data")
 The graph above shows... 
 
 ### Correlation structure
-```{r}
+```{r fig.height=10, fig.width=10}
 pairs.plus(gasoline.x[,1:10])
 pairs.plus(gasoline.x[,201:210])
 pairs.plus(gasoline.x[,301:310]) 
@@ -288,7 +287,7 @@ oct.pcr=pcr(octane~scale(NIR),data=gasoline,ncomp=40,validation="CV")
 summary(oct.pcr)
 ```
 
-Based on the CV RMSEP, it is optimal to retain 9 principal components (19.94%).
+Based on the CV RMSEP, it is optimal to retain 6 principal components (19.72%).
 
 ```{r}
 gasoline.train = gasoline[1:50,]
@@ -299,6 +298,7 @@ dim(gasoline.train$NIR)
 
 ### Check optimal # of component predictions
 
+Let's explore the optimal number of components further with our oct.pcr model, where we are considering within ncomp=40.
 
 ```{r}
 #10 components
@@ -336,7 +336,7 @@ ypred = predict(oct.pcr, ncomp = 4, newdata = gasoline.test)
 paste("RMSEP for testing, 4PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
 ```
 
-Optimal number of components to retain is 6.
+Optimal number of components to retain is 6, indeed, 6.
 
 ## PART C
 
@@ -352,6 +352,7 @@ Each pc comnponent takes pieces of variables. The loadings plot above depicts wh
 
 Using the optimal number of components chosen above, fit the model to these training data and predict the octane of the test cases using their NIR spectra.  What is the RMSEP using the training/test set approach? (4 pts.)
 
+We picked ncomp=6.
 ```{r}
 oct.train = pcr(octane~scale(NIR),data=gasoline.train,ncomp=6)
 ```
@@ -359,6 +360,7 @@ oct.train = pcr(octane~scale(NIR),data=gasoline.train,ncomp=6)
 
 Assuming you have already built a model to the training data set do the following to obtain the predicted octanes for the observations in the test set.
 
+Let's see how the model oct.train, that was fir with ncomp=6, predicts on the test set with ncomp=6.
 ```{r}
 ypred = predict(oct.train,ncomp=6,newdata=gasoline.test)
 yact = gasoline.test$octane
