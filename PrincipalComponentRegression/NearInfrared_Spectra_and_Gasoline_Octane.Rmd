@@ -246,7 +246,7 @@ matplot(t(gasoline.x),type="l",xlab="Variable",ylab="Spectral Intensity")
 title(main="Spectral Readings for Gasoline Data")
 ```
 
-The graph above shows... 
+The graph above shows how the value of spectral intensity changes based on the variables in the data.
 
 ### Correlation structure
 ```{r fig.height=10, fig.width=10}
@@ -256,15 +256,7 @@ pairs.plus(gasoline.x[,301:310])
 
 ```
 
-As the variables are very higly correlated (> .94), our principal components will help reduce the dimentionality of the data. This is depicted by the scatterplot matrices generated above with the pairs.plus() function
-
-```{r eval=FALSE, include=FALSE}
-gasoline.cor = cor(gasoline.x)
-corrplot(gasoline.cor, order = "hclust", hclust.method = "complete")
-```
-
-DISCUSS...
-
+As the variables are very higly correlated (> .94), our principal components will help reduce the dimentionality of the data. This is depicted by the scatterplot matrices generated above with the pairs.plus() function. Those are very higly correlated with each other and we are going to use princiapl components and partial least squares in predicting our response as they will make sure that we are not redundant in fitting the model.
 
 
 ```{r}
@@ -390,11 +382,66 @@ oct.pls = plsr(octane~scale(NIR),data=gasoline,ncomp=40,validation="CV")
 summary(oct.pls)
 ```
 
+Based on the CV RMSEP, it is optimal to retain 5 principal components (20.56%).
+
 ```{r}
 plot(RMSEP(oct.pls), legendpos = "topright",)
 ```
 
 It looks like the optimal number of components is somewhere between 4-6.
+
+Let's ecplore choosing the optimal number of components further.
+
+
+```{r}
+#4 components
+ypred = predict(oct.pls, ncomp = 4, newdata = gasoline.test)
+paste("RMSEP for testing, 4PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
+```
+
+```{r}
+#5 components
+ypred = predict(oct.pls, ncomp = 5, newdata = gasoline.test)
+paste("RMSEP for testing, 5PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
+```
+
+```{r}
+#6 components
+ypred = predict(oct.pls, ncomp = 6, newdata = gasoline.test)
+paste("RMSEP for testing, 6PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
+```
+Based on the above using 5 components yields lowest RMSEP.
+
+We picked ncomp=5.
+
+```{r}
+oct.train.pls = plsr(octane~scale(NIR),data=gasoline.train,ncomp=5)
+```
+
+Let's see how the model oct.train.pls, that was fit with ncomp=5, predicts on the test set with ncomp=5.
+```{r}
+ypred = predict(oct.train.pls,ncomp=5,newdata=gasoline.test)
+yact = gasoline.test$octane
+paste("RMSEP:", sqrt(mean((ypred-yact)^2)))
+
+```
+
+However, ncomp=4 is also worth exploring further in Monte Carlo Cross-Validation (PART H) as we are getting RMSEP=.44.
+
+```{r}
+oct.train.pls = plsr(octane~scale(NIR),data=gasoline.train,ncomp=4)
+```
+
+Let's see how the model oct.train.pls, that was fit with ncomp=4, predicts on the test set with ncomp=4.
+```{r}
+ypred = predict(oct.train.pls,ncomp=4,newdata=gasoline.test)
+yact = gasoline.test$octane
+paste("RMSEP:", sqrt(mean((ypred-yact)^2)))
+
+```
+
+ncomp=4, yileds RMSEP=.18.
+
 
 ## PART F
 
@@ -427,7 +474,7 @@ Estimate the RMSEP using Monte Carlo Cross-Validation (MCCV) using p=.80 for bot
 
 The code for the function pls.cv is shown below.  It takes the X’s, the response y, and the number of components to use in the PLS fit as the required arguments. Note the function computes RMSEP for each MC sample. You can modify this code to do the same for PCR.  Include the code you wrote for your pcr.cv() function.  You will want to change the number of components (ncomp) to those you found to be optimal above.
 ```{r}
-pls.cv = function(X,y,ncomp=2,p=.667,B=100) {
+pls.cv = function(X,y,ncomp=5,p=.667,B=100) {
 	n = length(y)
 	X = scale(X)
 data = data.frame(X,y)
@@ -444,7 +491,7 @@ cv
 ```
 
 ```{r}
-pcr.cv = function(X,y,ncomp=2,p=.667,B=100) {
+pcr.cv = function(X,y,ncomp=6,p=.667,B=100) {
 	n = length(y)
 	X = scale(X)
 data = data.frame(X,y)
@@ -457,6 +504,7 @@ fit2 <- pcr(y~., ncomp=ncomp, data = data[sam,])
 ynew <- predict(fit2,ncomp=ncomp,newdata=data[-sam,])
 cv[i] <- sqrt(mean((y[-sam]-ynew)^2,na.rm=T))
 }
+#check = return(data.frame(RMSEP=cv))
 cv
 }
 ```
@@ -464,13 +512,29 @@ cv
 
 ### PCR
 
-```{r}
-pcr.cv()
-```
+The final optimal number of components we chose for our Principal Component Regression model is ncomp=6.
 
+```{r}
+final.pcr.cv = pcr.cv(gasoline$NIR, gasoline$octane, ncomp = 6, p=.80, B=1000)
+mean(final.pcr.cv)
+```
 
 ### PLS
 
+The final optimal number of components we chose for our Partial Least Squares Regression model is ncomp=5.
+
+We ran the Monte Carlo Cross-Validation multiple times with ncomp=4 and ncomp=5 and the best results with least variance were when we used 5 components to fir out plsr model.
+```{r}
+final.pls.cv = pls.cv(gasoline$NIR, gasoline$octane, ncomp = 5 , p=.80, B=1000)
+mean(final.pls.cv)
+```
+
+```{r}
+df = data.frame(PCR.RMSEP = mean(final.pcr.cv), PLS.RMSEP = mean(final.pls.cv))
+df
+```
+
+Comparing our final PCR and PLS models, PLS performed slightly better.
 
 
 
