@@ -2,7 +2,10 @@
 title: "Shrinkage-methods"
 author: "Samuel Andrews & Mikolaj Wieczorek"
 date: "2/28/2020"
-output: word_document
+output:
+  md_document:
+    variant: markdown_github
+    
 ---
 
 ```{r include=FALSE}
@@ -18,8 +21,9 @@ library(MASS)
 library(glmnet)
 ```
 ```{r include=FALSE}
-load("~/OneDrive - MNSCU/myGithub/Statistics/Regression_models/Multiple_Linear_Regression/MLR-ACE-AVAS-MARS/Data/mult.Rdata")
-load("~/OneDrive - MNSCU/myGithub/Statistics/Regression_models/Multiple_Linear_Regression/MLR-ACE-AVAS-MARS/Data/Regression.Rdata")
+setwd("~/OneDrive - MNSCU/myGithub/Supervised_Learning/Multiple_Linear_Regression/MachineLearning-SupervisedLearning/Data")
+load("~/OneDrive - MNSCU/myGithub/Supervised_Learning/Multiple_Linear_Regression/MachineLearning-SupervisedLearning/Data/mult.Rdata")
+load("~/OneDrive - MNSCU/myGithub/Supervised_Learning/Multiple_Linear_Regression/MachineLearning-SupervisedLearning/Data/Regression.Rdata")
 ```
 
 ```{r include=FALSE}
@@ -447,4 +451,5 @@ metrics =cbind(((names)), rbind(
 ```{r}
 as.data.frame(metrics)
 ```
+
 As seen above, based on MAPE to best compare across metrics from other models, the best method was ridge and Elastic Net came in second best - however, the Elastic Net method was very close to the Lasso method in terms of determining the age of the subject given their genes. Recalling our Actual vs. Predicted plots from before, Elastic Net's fit was outstanding; nevertheless, as seen from out cross-validation accuracy metrics results, that model had high variance. We would further recommend to experiment with Elastic Net hyperparameter tuning.

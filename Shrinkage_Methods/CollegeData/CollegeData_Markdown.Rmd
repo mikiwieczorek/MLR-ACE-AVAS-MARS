@@ -1,15 +1,11 @@
 ---
+title: "Shrinkage-methods"
+author: "Samuel Andrews & Mikolaj Wieczorek"
+date: "2/28/2020"
 output:
-  word_document: default
-  pdf_document: default
+  md_document:
+    variant: markdown_github
 ---
----
-title: "Assignment_4_Sam_Mikolaj"
-output: html_document
----```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-
-
 
 ```{r}
 
@@ -45,10 +41,9 @@ y = College2$PctAccept
 
 ```
 
-#1
 
 
-a)	Split the data into a training set and a test set by forming the indices for the training and test sets.  Use p = .667, i.e. use two-thirds of the data to train the models.  Note: That none of commands below show fitting to just a training set!  (1 pt.)
+## We split the data into a training set and a test set by forming the indices for the training and test sets.  Use p = .667, i.e. use two-thirds of the data to train the models.  Note: That none of commands below show fitting to just a training set!  (1 pt.)
 
 ```{r}
 set.seed(1)
@@ -60,7 +55,7 @@ We created this index vector (where length y is the number of rows) to be used a
 
 
 
-b)  Fit an OLS model for number of applications using the training set, and report the mean RMSEP for the test set.  (4 pts.)
+## We fit an OLS model for number of applications using the training set, and report the mean RMSEP for the test set.  (4 pts.)
 
 ```{r}
 
@@ -75,10 +70,9 @@ RMSEP.ols
 ```
 
 > RMSEP.ols
-[1] 16.82557
+> 16.82557
 
-
-c)	Fit a sequence of ridge and lasso regression models on the training data set using the commands below given for the ridge models. The lambda sequence (grid) is formed to create the sequence of models. Create two plots showing the parameter shrinkage, one with the norm constraint on the x-axis and one with log lambda values on the x-axis.  Discuss. (6 pts.)
+## We fit a sequence of ridge and lasso regression models on the training data set using the commands below given for the ridge models. The lambda sequence (grid) is formed to create the sequence of models. We create two plots showing the parameter shrinkage, one with the norm constraint on the x-axis and one with log lambda values on the x-axis. 
 
 ```{r}
 grid = 10^seq(10,-2,length=200)
@@ -94,9 +88,7 @@ plot(ridge.mod)
 plot(ridge.mod,xvar="lambda") 
 ```
 
-Both using lambda and the L1 norm tell the same story in different scales. Overall, they look fairly stadnard and we can definetly
-see that certain varaibles are more important that others by a noatable margain. From the plot with x = lambda we also can note that
-likley would never want a lambda value greater than 5, as subesquent increases won't have any notable impact. It will be interesting 
+Both using lambda and the L1 norm tell the same story in different scales. Overall, they look fairly stadnard and we can definetly see that certain varaibles are more important that others by a noatable margain. From the plot with x = lambda we also can note that likley would never want a lambda value greater than 5, as subesquent increases won't have any notable impact. It will be interesting 
 to see how this stacks up against the LASSO versions
 
 
@@ -117,7 +109,7 @@ tends to be much more prescise in that regard.
 
 
 
-d)	Use cross-validation to determine the “optimal” values for the shrinkage parameter for both ridge and lasso and plot the results.  The commands for ridge regression are given below. (4 pts.)
+## Using cross-validation to determine the “optimal” values for the shrinkage parameter for both ridge and lasso and plot the results. 
 
 ```{r}
 
@@ -138,7 +130,7 @@ bestlam_lasso
 ```
 
 
-e)	Using the optimal lambda (bestlam) for both ridge and Lasso regression fit both models and compare the estimated coefficients for the OLS, ridge, and Lasso regressions. Discuss.  (3 pts.)
+## Using the optimal lambda (bestlam) for both ridge and Lasso regression, we fit both models and compare the estimated coefficients for the OLS, ridge, and Lasso regressions.
 
 ```{r}
 lasso.mod = glmnet(Xs[sam,], y[sam], alpha = 1, lambda = bestlam_lasso)
@@ -216,7 +208,7 @@ and how widespread their zeroing out is. Ridge is by far the wide spread in its 
 4 of them. OLS, meanwhile, is much more conservative dut to the nature of its functionality and only heavily demphasises a few
 key variables like the ones discussed earlier without truly removing anything.
 
-f)	Construct a plot of the predicted test y values vs. the actual y test values for both the ridge and Lasso regression models.  Discuss.  (4 pts.)
+## We construct a plot of the predicted test y values vs. the actual y test values for both the ridge and Lasso regression models.  Discuss.  (4 pts.)
 
 
 ```{r}
@@ -242,7 +234,7 @@ conjecture
 
 
 
-G)	Using the optimal lambda (bestlam) for both ridge and Lasso regression find the mean RMSEP for the test set.  How do the mean RMSEP compare for the OLS, ridge, and Lasso regression models? Discuss. (3 pts.)
+## Using the optimal lambda (bestlam) for both ridge and Lasso regression, we find the mean RMSEP for the test set.  We look at how the mean RMSEP compares for the OLS, ridge, and Lasso regression models.
 
 These models are already fit with their associated best lambda values.
 ```{r}
@@ -264,7 +256,7 @@ RMSEP.lasso
 ```
 
 
-h)	Use Monte Carlo Split-Sample Cross-Validation to estimate the mean RMSEP for the OLS, Ridge, and Lasso regressions above.  Which model has best predictive performance?  (5 pts.)
+## Using Monte Carlo Split-Sample Cross-Validation to estimate the mean RMSEP for the OLS, Ridge, and Lasso regressions above.  Which model has best predictive performance?
 
 ```{r}
 # MLR.ssmc = function(fit,p=.667,M=100) {
@@ -343,10 +335,8 @@ case, either the full ridge or LASSO would be fairly useful.
 
 
 
-I Repeat (a) – (h) using the College4 data frame with logApps as the response.  (30 pts.)
 
-
-ia)  Split the data into a training set and a test set by forming the indices for the training and test sets.  Use p = .667, i.e. use two-thirds of the data to train the models.  Note: That none of commands below show fitting to just a training set!  (1 pt.)
+## Split the data into a training set and a test set by forming the indices for the training and test sets.  Using p = .667, i.e. using two-thirds of the data to train the models. 
 
 we once again can use this same vector as a means to seperate our training and test set
 ```{r}
@@ -355,7 +345,7 @@ sam = sample(1:length(y), floor(.667*length(y)), replace = F)
 ```
 
 
-ib) Fit an OLS model for number of applications using the training set, and report the mean RMSEP for the test set.  (4 pts.)
+## Fitting an OLS model for number of applications using the training set, and reporting the mean RMSEP for the test set. 
 
 ```{r}
 X = model.matrix(PctAccept~.,data=College2)[,-1]
@@ -373,7 +363,7 @@ RMSEP.ols
 
 ```
 
-ic) Fit a sequence of ridge and lasso regression models on the training data set using the commands below given for the ridge models. The lambda sequence (grid) is formed to create the sequence of models. Create two plots showing the parameter shrinkage, one with the norm constraint on the x-axis and one with log lambda values on the x-axis.  Discuss. (6 pts.)
+## We fit a sequence of ridge and lasso regression models on the training data set using the commands below given for the ridge models. The lambda sequence (grid) is formed to create the sequence of models. We create two plots showing the parameter shrinkage, one with the norm constraint on the x-axis and one with log lambda values on the x-axis.  
 
 training model versions
 
@@ -413,7 +403,7 @@ sense given that we are now trying to predict whether or not a application was s
 
 
 
-id)	Use cross-validation to determine the “optimal” values for the shrinkage parameter for both ridge and lasso and plot the results.  The commands for ridge regression are given below. (4 pts.)
+## Using cross-validation to determine the “optimal” values for the shrinkage parameter for both ridge and lasso and plot the results.
 
 ```{r}
 # cv.out_ridge4 = cv.glmnet(Xs[sam,],y[sam],alpha=0)
@@ -432,7 +422,7 @@ id)	Use cross-validation to determine the “optimal” values for the shrinkage
 # 0.001883874
 ```
 
-ie)	Using the optimal lambda (bestlam) for both ridge and Lasso regression fit both models and compare the estimated coefficients for the OLS, ridge, and Lasso regressions. Discuss.  (3 pts.)
+## Using the optimal lambda (bestlam) for both ridge and Lasso regression we fit both models and compare the estimated coefficients for the OLS, ridge, and Lasso regressions. 
 
 ```{r}
 #IE	Using the optimal lambda (bestlam) for both ridge and Lasso regression fit both models and compare the estimated coefficients for the OLS, ridge, and Lasso regressions. Discuss.  (3 pts.)
@@ -506,7 +496,7 @@ ie)	Using the optimal lambda (bestlam) for both ridge and Lasso regression fit b
 We once again see some similarities among the three, with variables such as phd, terminal, gradrate, part, and a bunch of other variables that would not seem to correlate with the response all being lowered in priority. In addition, all three of these heavily emphasze the acceptance variable which makes sense given that if somebody is accepted, they almost assurdely sent in an application. Otherwise, we patterns similar to what was desribed on the PctAccept variable in terms of how each model punishes low performing variables. Although, OLS in particular is much more restrained in not effectively zeroing out certain variables this time around, with ridge also feeling a bitmore conservative with how many it effectively zeroes out. 
 
 
-IF)  Construct a plot of the predicted test y values vs. the actual y test values for both the ridge and Lasso regression models.  Discuss.  (4 pts.)
+## We construct a plot of the predicted test y values vs. the actual y test values for both the ridge and Lasso regression models. 
 
 
 ```{r}
@@ -518,16 +508,10 @@ IF)  Construct a plot of the predicted test y values vs. the actual y test value
 # plot(y[-sam], lasso.pred,xlab="Test y-values",ylab="Predicted Test y-values")
 ```
 
-These plots look nigh indistinguishable from each other, as each one is so precise due to having such a highly correlated variable
-within the model. Lasso looks ever so slightly more precise, and based on our accuracy metric from before is likely the better model,
-but both of these two would be more then effecitve going off of the graph alone. 
+These plots look nigh indistinguishable from each other, as each one is so precise due to having such a highly correlated variable within the model. Lasso looks ever so slightly more precise, and based on our accuracy metric from before is likely the better model, but both of these two would be more then effecitve going off of the graph alone. 
 
 
-ig)
-
-
-these models are already fit with their associated best lambda values. We will also undo the logs, as we likely want to
-predict outside of the log scale
+These models are already fit with their associated best lambda values. We will also undo the logs, as we likely want to predict outside of the log scale.
 
 
 ```{r}
@@ -559,13 +543,10 @@ predict outside of the log scale
 
 
 
-hile all of the models performed well, OLS was left in the dust with its values of roughly 4.5, as both ridge and LASSO
-Both get beneath 1 and are hovering around 1,000. As for which is better among the two, much like previously while the answer
-is LASSO, the ridge is close enough to the point that it practically does not matter. The methods are likey to simply be to similar to get a meaningfully different results when fed the same predictors. Still, if one were to try some amount of elastic net one may be able to improve these metrics yet. This does not discount the power of these models though, as they both are improvments.
+While all of the models performed well, OLS was left in the dust with its values of roughly 4.5, as both ridge and LASSO. Both get beneath 1 and are hovering around 1,000. As for which is better among the two, much like previously while the answer is LASSO, the ridge is close enough to the point that it practically does not matter. The methods are likey to simply be to similar to get a meaningfully different results when fed the same predictors. Still, if one were to try some amount of elastic net one may be able to improve these metrics yet. This does not discount the power of these models though, as they both are improvments.
 
 
-
-HI	Use Monte Carlo Split-Sample Cross-Validation to estimate the mean RMSEP for the OLS, Ridge, and Lasso regressions above.  Which model has best predictive performance?  (5 pts.)
+## We use Monte Carlo Split-Sample Cross-Validation to estimate the mean RMSEP for the OLS, Ridge, and Lasso regressions above.  Which model has best predictive performance? 
 
 
 ```{r}
@@ -634,8 +615,7 @@ HI	Use Monte Carlo Split-Sample Cross-Validation to estimate the mean RMSEP for 
 
 ```
 
-While the matchup was close and the lasso and ridge models were very close, the lasso method came out on top by roughly 3% MAPE. Given its more punishing nature and likelehood to focus on fewer varibles more, this makes sense given that we were working with a small
-number of variables. It should also be noted that both the ridge and the lasso method blew the OLS by itself completely out of the water, speaking volumes about just how effective shrinkage can be even on smaller datasets.
+While the matchup was close and the lasso and ridge models were very close, the lasso method came out on top by roughly 3% MAPE. Given its more punishing nature and likelehood to focus on fewer varibles more, this makes sense given that we were working with a small number of variables. It should also be noted that both the ridge and the lasso method blew the OLS by itself completely out of the water, speaking volumes about just how effective shrinkage can be even on smaller datasets.
 
 
 
