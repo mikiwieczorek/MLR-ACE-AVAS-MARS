@@ -30,7 +30,6 @@ require(caret)
 
 Data Preperation:
 ```{r}
-knitr::opts_chunk$set(include = FALSE)
 QSAR.melt = read.csv("Melting Point QSAR.csv")
 
 #preprocess this data for 203 predictors
@@ -96,7 +95,7 @@ validationplot(qsar.pcr, val.type = "RMSEP")
 This plot lines up with our stated results quite nicely, with the late 60s being the last values to truly make a difference while a vast majority of the work is done by roughly 40 of them. Now that we have our candiate values, we can further use cross-validation on the test set to pick the best one.
 
 
-```{r include=FALSE}
+```{r }
 yact = qsar.test$MTP
 
 ypred = predict(qsar.pcr, ncomp = 41, newdata = qsar.test)
@@ -286,7 +285,7 @@ plot(RMSEP(qsar.pls), legendpos = "topright")
 Looking at this plot, we can affirm our understanding based off of the raw numbers, as we begin to start getting diminshing returns around the late 20 values, with anything past it not really gaining anything substantial. From here, we can now to some simple cross-validation on a test set to narrow done to an optimal value.
 
 
-```{r include=FALSE}
+```{r }
 
 ypred = predict(qsar.pls,ncomp=15,newdata=qsar.test)
 yact = qsar.test$MTP
@@ -394,7 +393,7 @@ c)	 Use your “optimal” model for each method (PCR and PLS) to predict the me
  of the test cases. Which modeling method performs the best when predicting the test 
  cases?  (10 pts.)
 
-```{r include = FALSE}
+```{r}
 
 ypred = predict(qsar.pcr,ncomp=66,newdata=qsar.test)
 ytest = qsar.test$MTP
@@ -414,7 +413,7 @@ plot(ytest,ypred,xlab="Actual Test MTP",ylab="Predicted Test MTP")
 ```
 
 
-```{r include=FALSE}
+```{r}
 
 ypred = predict(qsar.pls,ncomp=16,newdata=qsar.test)
 ytest = qsar.test$MTP
