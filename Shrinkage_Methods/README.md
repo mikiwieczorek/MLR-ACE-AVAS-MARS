@@ -12,11 +12,14 @@ College data frame in the ISLR library.
 =======================================
 
 U.S. News and World Report’s College Data
------------------------------------------
 
-<b>Description</b> Statistics for a large number of US Colleges from the
-1995 issue of US News and World Report. <b>Usage</b> College
-<b>Format</b> A data frame with 777 observations on the following 18
+<b>Description</b> 
+<br>Statistics for a large number of US Colleges from the
+1995 issue of US News and World Report.</br>
+<br><b>Usage</b> </br>
+College
+<br><b>Format</b></br>
+A data frame with 777 observations on the following 18
 variables.
 
 Private - A factor with levels No and Yes indicating private or public
