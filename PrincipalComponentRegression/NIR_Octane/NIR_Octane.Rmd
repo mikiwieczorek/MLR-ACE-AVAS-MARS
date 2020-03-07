@@ -1,0 +1,540 @@
+---
+title: "NIR Spectra & Gasoline Octane"
+author: "Samuel Andrews & Mikolaj Wieczorek"
+date: "3/5/2020"
+output: word_document
+---
+
+```{r include=FALSE}
+#Libraries
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(nnet)
+library(Ecfun)
+library(car)
+library(ISLR)
+library(MASS)
+library(glmnet)
+library(pls)
+library(corrplot)
+```
+
+
+```{r include=FALSE}
+setwd("~/OneDrive - MNSCU/myGithub/Supervised_Learning/Multiple_Linear_Regression/MachineLearning-SupervisedLearning/Data")
+load("~/OneDrive - MNSCU/myGithub/Supervised_Learning/Multiple_Linear_Regression/MachineLearning-SupervisedLearning/Data/mult.Rdata")
+load("~/OneDrive - MNSCU/myGithub/Supervised_Learning/Multiple_Linear_Regression/MachineLearning-SupervisedLearning/Data/Regression.Rdata")
+```
+
+```{r include=FALSE}
+PredAcc = function(y, ypred){
+  RMSEP = sqrt(mean((y-ypred)^2))
+  MAE = mean(abs(y-ypred))
+  MAPE = mean(abs(y-ypred)/y)*100
+  cat("RMSEP\n")
+  cat("================\n")
+  cat(RMSEP, "\n\n")
+  cat("MAE\n")
+  cat("================\n")
+  cat(MAE, "\n\n")
+  cat("MAPE\n")
+  cat("================\n")
+  cat(MAPE, "\n\n")
+  return(data.frame(RMSEP = RMSEP, MAE = MAE, MAPE = MAPE))
+  
+}
+
+myBC = function(y) {
+  require(car)
+  BCtran(y)
+  results = powerTransform(y)
+  summary(results)
+}
+
+kfold.MLR.log = function(fit,k=10) {
+  sum.sqerr = rep(0,k)
+  sum.abserr = rep(0,k)
+  sum.pererr = rep(0,k)
+  y = fit$model[,1]
+  y = exp(y)
+  x = fit$model[,-1]
+  data = fit$model
+  n = nrow(data)
+  folds = sample(1:k,nrow(data),replace=T)
+  for (i in 1:k) {
+    fit2 <- lm(formula(fit),data=data[folds!=i,])
+    ypred = predict(fit2,newdata=data[folds==i,])
+    sum.sqerr[i] = sum((y[folds==i]-ypred)^2)
+    sum.abserr[i] = sum(abs(y[folds==i]-ypred))
+    sum.pererr[i] = sum(abs(y[folds==i]-ypred)/y[folds==i])
+  }
+  cv = return(data.frame(RMSEP=sqrt(sum(sum.sqerr)/n),
+                         MAE=sum(sum.abserr)/n,
+                         MAPE=sum(sum.pererr)/n))
+}
+
+
+
+bootlog.cv = function(fit,B=100,data=fit$model) {
+  yt=fit$fitted.values+fit$residuals
+  yact = exp(yt)
+  yhat = exp(fit$fitted.values)
+  resids = yact - yhat
+  ASR=mean(resids^2)
+  AAR=mean(abs(resids))
+  APE=mean(abs(resids)/yact)
+  boot.sqerr=rep(0,B)
+  boot.abserr=rep(0,B)
+  boot.perr=rep(0,B)
+  y = fit$model[,1]
+  x = fit$model[,-1]
+  n = nrow(data)
+  for (i in 1:B) {
+    sam=sample(1:n,n,replace=T)
+    samind=sort(unique(sam))
+    temp=lm(formula(fit),data=data[sam,])
+    ytp=predict(temp,newdata=data[-samind,])
+    ypred = exp(ytp)
+    boot.sqerr[i]=mean((exp(y[-samind])-ypred)^2)
+    boot.abserr[i]=mean(abs(exp(y[-samind])-ypred))
+    boot.perr[i]=mean(abs(exp(y[-samind])-ypred)/exp(y[-samind]))
+  }
+  ASRo=mean(boot.sqerr)
+  AARo=mean(boot.abserr)
+  APEo=mean(boot.perr)
+  OPsq=.632*(ASRo-ASR)
+  OPab=.632*(AARo-AAR)
+  OPpe=.632*(APEo-APE)
+  RMSEP=sqrt(ASR+OPsq)
+  MAEP=AAR+OPab
+  MAPEP=(APE+OPpe)*100
+  cat("RMSEP\n")
+  cat("===============\n")
+  cat(RMSEP,"\n\n")
+  cat("MAE\n")
+  cat("===============\n")
+  cat(MAEP,"\n\n")
+  cat("MAPE\n")
+  cat("===============\n")
+  cat(MAPEP,"\n\n")
+  return(data.frame(RMSEP=RMSEP,MAE=MAEP,MAPE=MAPEP))  
+}
+
+
+nnet.sscv = function(x,y,fit,data,p=.667,B=10,size=5,decay=.001,skip=F,linout=T,maxit=25000) {
+  require(nnet)
+  n = length(y)
+  MSEP = rep(0,B)
+  MAEP = rep(0,B)
+  MAPEP = rep(0,B)
+  ss = floor(n*p)
+  for (i in 1:B) {
+    sam = sample(1:n,ss,replace=F)
+    fit2 = nnet(formula(fit),size=size,linout=linout,skip=skip,decay=decay,maxit=maxit,
+                trace=F,data=data[sam,])
+    yhat = predict(fit2,newdata=x[-sam,])
+    ypred = exp(yhat)
+    yact = exp(y[-sam])
+    MSEP[i] = mean((ypred-yact)^2)
+    MAEP[i] = mean(abs(ypred-yact))
+    MAPEP[i] = mean(abs(ypred-yact)/yact)
+  }
+  RMSEP = sqrt(mean(MSEP))
+  MAE = mean(MAEP)
+  MAPE = mean(MAPEP)
+  cat("RMSEP\n")
+  cat("=============================\n")
+  cat(RMSEP,"\n\n")
+  cat("MAE\n")
+  cat("=============================\n")
+  cat(MAE,"\n\n")
+  cat("MAPE\n")
+  cat("=============================\n")
+  cat(MAPE*100,"\n\n")
+  temp = data.frame(RMSEP=sqrt(MSEP),MAEP=MAEP,MAPEP=MAPEP*100)
+  return(temp)
+}
+
+#Monte Carlo Cross-Validation of Ridge and Lasso Regression
+glmnet.ssmc = function(X,y,p=.667,M=100,alpha=1,lambda=1) {
+  RMSEP = rep(0,M)
+  MAEP = rep(0,M)
+  MAPEP = rep(0,M)
+  n = nrow(X)
+  for (i in 1:M) {
+    ss = floor(n*p)
+    sam = sample(1:n,ss,replace=F)
+    fit = glmnet(X[sam,],y[sam],lambda=lambda,alpha=alpha)
+    ypred = predict(fit,newx=X[-sam,])
+    RMSEP[i] = sqrt(mean((y[-sam]-ypred)^2))
+    MAEP[i] = mean(abs(y[-sam]-ypred))
+    yp = ypred[y[-sam]!=0]
+    ya = y[-sam][y[-sam]!=0]
+    MAPEP[i]=mean(abs(yp-ya)/ya)
+  }
+  cat("RMSEP =",mean(RMSEP),"  MAEP=",mean(MAEP),"  MAPEP=",mean(MAPEP))
+  cv = return(data.frame(RMSEP=RMSEP,MAEP=MAEP,MAPEP=MAPEP)) 
+}
+
+#when response is logged
+glmnet.sslog = function(X,y,p=.667,M=100,alpha=1,lambda=1) {
+  RMSEP = rep(0,M)
+  MAEP = rep(0,M)
+  MAPEP = rep(0,M)
+  n = nrow(X)
+  for (i in 1:M) {
+    ss = floor(n*p)
+    sam = sample(1:n,ss,replace=F)
+    fit = glmnet(X[sam,],y[sam],lambda=lambda,alpha=alpha)
+    ypred = predict(fit,newx=X[-sam,])
+    ya = exp(y[-sam])
+    ypred = exp(ypred)
+    RMSEP[i] = sqrt(mean((ya-ypred)^2))
+    MAEP[i] = mean(abs(ya-ypred))
+    MAPEP[i]=mean(abs(ypred-ya)/ya)
+  }
+  cat("RMSEP =",mean(RMSEP),"  MAEP=",mean(MAEP),"  MAPEP=",mean(MAPEP))
+  cv = return(data.frame(RMSEP=RMSEP,MAEP=MAEP,MAPEP=MAPEP))
+  
+}
+
+
+#Monte Carlo Cross-Validation of OLS Regression Models
+MLR.ssmc = function(fit,p=.667,M=100) {
+  RMSEP = rep(0,M)
+  MAEP = rep(0,M)
+  MAPEP = rep(0,M)
+  y = fit$model[,1]
+  x = fit$model[,-1]
+  data = fit$model
+  n = nrow(data)
+  for (i in 1:M) {
+    ss = floor(n*p)
+    sam = sample(1:n,ss,replace=F)
+    fit2 = lm(formula(fit),data=data[sam,])
+    ypred = predict(fit2,newdata=x[-sam,])
+    RMSEP[i] = sqrt(mean((y[-sam]-ypred)^2))
+    MAEP[i] = mean(abs(y[-sam]-ypred))
+    yp = ypred[y[-sam]!=0]
+    ya = y[-sam][y[-sam]!=0]
+    MAPEP[i]=mean(abs(yp-ya)/ya)
+  }
+  cat("RMSEP =",mean(RMSEP),"  MAEP=",mean(MAEP),"  MAPEP=",mean(MAPEP))
+  cv = return(data.frame(RMSEP=RMSEP,MAEP=MAEP,MAPEP=MAPEP))
+}
+
+
+
+```
+
+```{r}
+setwd("~/OneDrive - MNSCU/myGithub/Supervised_Learning/Multiple_Linear_Regression/MachineLearning-SupervisedLearning/PrincipalComponentRegression")
+data(gasoline)
+```
+
+This data consits of n=30 subjects and 403 columns that represent genetic marker intensity measurments for 403 different genes.
+
+```{r}
+gasoline.x = gasoline$NIR
+dim(gasoline.x)
+```
+
+
+```{r}
+matplot(t(gasoline.x),type="l",xlab="Variable",ylab="Spectral Intensity")
+title(main="Spectral Readings for Gasoline Data")
+```
+
+The graph above shows how the value of spectral intensity changes based on the variables in the data.
+
+### Correlation structure
+```{r fig.height=10, fig.width=10}
+pairs.plus(gasoline.x[,1:10])
+pairs.plus(gasoline.x[,201:210])
+pairs.plus(gasoline.x[,301:310]) 
+
+```
+
+As the variables are very higly correlated (> .94), our principal components will help reduce the dimentionality of the data. This is depicted by the scatterplot matrices generated above with the pairs.plus() function. Those are very higly correlated with each other and we are going to use princiapl components and partial least squares in predicting our response as they will make sure that we are not redundant in fitting the model.
+
+
+```{r}
+#Explore the response variable
+par(mfrow=c(1,1))
+hist(gasoline$octane)
+Statplot(gasoline$octane)
+BCtran(gasoline$octane)
+Statplot(bcPower(gasoline$octane, 2))
+```
+
+There is not much skewness prevailing. When aplpying a suggested optimal lambda=2 Box-Cox transformation, the skewness hasn't changed that much to apply the transformation on the response (octane).
+
+## PART B
+
+Now use the pcr() function as shown in yarn example in your notes to fit a PCR model for these data.  What is the “optimal” # of components to use in your model? (4 pts.)
+
+```{r}
+oct.pcr=pcr(octane~scale(NIR),data=gasoline,ncomp=40,validation="CV")
+summary(oct.pcr)
+```
+
+Based on the CV RMSEP, it is optimal to retain 6 principal components (19.72%).
+
+```{r}
+gasoline.train = gasoline[1:50,]
+gasoline.test = gasoline[51:60,]
+attributes(gasoline.train)
+dim(gasoline.train$NIR)
+```
+
+### Check optimal # of component predictions
+
+Let's explore the optimal number of components further with our oct.pcr model, where we are considering within ncomp=40.
+
+```{r}
+#10 components
+ypred = predict(oct.pcr, ncomp = 11, newdata = gasoline.test)
+paste("RMSEP for testing:", sqrt(mean(ypred-gasoline.test$octane)^2))
+```
+
+```{r}
+#9 components
+ypred = predict(oct.pcr, ncomp = 9, newdata = gasoline.test)
+paste("RMSEP for testing, 9PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
+```
+
+```{r}
+#7 components
+ypred = predict(oct.pcr, ncomp = 7, newdata = gasoline.test)
+paste("RMSEP for testing, 7PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
+```
+
+```{r}
+#6 components
+ypred = predict(oct.pcr, ncomp = 6, newdata = gasoline.test)
+paste("RMSEP for testing, 6PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
+```
+
+```{r}
+#5 components
+ypred = predict(oct.pcr, ncomp = 5, newdata = gasoline.test)
+paste("RMSEP for testing, 5PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
+```
+
+```{r}
+#4 components
+ypred = predict(oct.pcr, ncomp = 4, newdata = gasoline.test)
+paste("RMSEP for testing, 4PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
+```
+
+Optimal number of components to retain is 6, indeed, 6.
+
+## PART C
+
+Examine the loadings on the components you used in your model.  Use this plot to determine which NIR spectra load heavy on the 1st two principal components.  Summarize your findings.  (3 pts.)
+```{r}
+loadingplot(oct.pcr,comps=1:2,lty=1:2,lwd=2,legendpos="topright")
+```
+
+Each pc comnponent takes pieces of variables. The loadings plot above depicts which component takes in which ranges of pieces of variables. PC1 contains pieces of variables 110-120 and 350-400. PC2 is similar to PC1 but it puts more emphasis on variables 110-120 and 350-400 than PC1. PC2 also contains a lot information about some of the 170-230 variables. 
+
+
+## PART D
+
+Using the optimal number of components chosen above, fit the model to these training data and predict the octane of the test cases using their NIR spectra.  What is the RMSEP using the training/test set approach? (4 pts.)
+
+We picked ncomp=6.
+```{r}
+oct.train = pcr(octane~scale(NIR),data=gasoline.train,ncomp=6)
+```
+
+
+Assuming you have already built a model to the training data set do the following to obtain the predicted octanes for the observations in the test set.
+
+Let's see how the model oct.train, that was fir with ncomp=6, predicts on the test set with ncomp=6.
+```{r}
+ypred = predict(oct.train,ncomp=6,newdata=gasoline.test)
+yact = gasoline.test$octane
+paste("RMSEP:", sqrt(mean((ypred-yact)^2)))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+# Partial Least Squares Regression (PLS)
+
+## PART E
+
+Now use the plsr() function as shown in yarn example in your notes to fit a PLS model for these data. What is the “optimal” # of components to use in your model? (4 pts.)
+
+
+```{r}
+oct.pls = plsr(octane~scale(NIR),data=gasoline,ncomp=40,validation="CV")
+summary(oct.pls)
+```
+
+Based on the CV RMSEP, it is optimal to retain 5 principal components (20.56%).
+
+```{r}
+plot(RMSEP(oct.pls), legendpos = "topright",)
+```
+
+It looks like the optimal number of components is somewhere between 4-6.
+
+Let's ecplore choosing the optimal number of components further.
+
+
+```{r}
+#4 components
+ypred = predict(oct.pls, ncomp = 4, newdata = gasoline.test)
+paste("RMSEP for testing, 4PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
+```
+
+```{r}
+#5 components
+ypred = predict(oct.pls, ncomp = 5, newdata = gasoline.test)
+paste("RMSEP for testing, 5PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
+```
+
+```{r}
+#6 components
+ypred = predict(oct.pls, ncomp = 6, newdata = gasoline.test)
+paste("RMSEP for testing, 6PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
+```
+Based on the above using 5 components yields lowest RMSEP.
+
+We picked ncomp=5.
+
+```{r}
+oct.train.pls = plsr(octane~scale(NIR),data=gasoline.train,ncomp=5)
+```
+
+Let's see how the model oct.train.pls, that was fit with ncomp=5, predicts on the test set with ncomp=5.
+```{r}
+ypred = predict(oct.train.pls,ncomp=5,newdata=gasoline.test)
+yact = gasoline.test$octane
+paste("RMSEP:", sqrt(mean((ypred-yact)^2)))
+
+```
+
+However, ncomp=4 is also worth exploring further in Monte Carlo Cross-Validation (PART H) as we are getting RMSEP=.44.
+
+```{r}
+oct.train.pls = plsr(octane~scale(NIR),data=gasoline.train,ncomp=4)
+```
+
+Let's see how the model oct.train.pls, that was fit with ncomp=4, predicts on the test set with ncomp=4.
+```{r}
+ypred = predict(oct.train.pls,ncomp=4,newdata=gasoline.test)
+yact = gasoline.test$octane
+paste("RMSEP:", sqrt(mean((ypred-yact)^2)))
+
+```
+
+ncomp=4, yileds RMSEP=.18.
+
+
+## PART F
+
+Examine the loadings on the components you used in your model.  Use this plot to determine which NIR spectra load heavy on the 1st two principal components.  Summarize your findings.  (3 pts.)
+
+```{r}
+loadingplot(oct.pls,comps=1:2,legendpos="topright")
+```
+
+The two components explain about 88% of total variation (PC1=.65, PC2=.19). Here, PC1 is pretty similar to the loadings when we used pcr, with a bit more empahsis on the variables 360-400. Also it contains more informaiton about pieces of variables between 110-120. PC2, here, puts a lot emphasis on variables 170-230 as well as 350-360; it doesn't emphasize variables >350 as much as PC1 on this figure (or PC2 from loadings of pcr).
+
+
+
+## PART G
+
+```{r}
+mymodel = plsr(octane~scale(NIR),data=gasoline.train,ncomp=4)
+```
+
+```{r}
+ypred = predict(mymodel,ncomp=4,newdata=gasoline.test)
+yact = gasoline.test$octane
+paste("RMSEP:",sqrt(mean((ypred-yact)^2)))
+
+```
+
+## PART H
+
+Estimate the RMSEP using Monte Carlo Cross-Validation (MCCV) using p=.80 for both PLS and PCR (8 pts.)
+
+The code for the function pls.cv is shown below.  It takes the X’s, the response y, and the number of components to use in the PLS fit as the required arguments. Note the function computes RMSEP for each MC sample. You can modify this code to do the same for PCR.  Include the code you wrote for your pcr.cv() function.  You will want to change the number of components (ncomp) to those you found to be optimal above.
+```{r}
+pls.cv = function(X,y,ncomp=5,p=.667,B=100) {
+	n = length(y)
+	X = scale(X)
+data = data.frame(X,y)
+cv <- rep(0,B)
+for (i in 1:B) {
+ss <- floor(n*p)
+sam <- sample(1:n,ss,replace=F)
+fit2 <- plsr(y~.,ncomp=ncomp,data=data[sam,])
+ynew <- predict(fit2,ncomp=ncomp,newdata=data[-sam,])
+cv[i] <- sqrt(mean((y[-sam]-ynew)^2,na.rm=T))
+}
+cv
+}
+```
+
+```{r}
+pcr.cv = function(X,y,ncomp=6,p=.667,B=100) {
+	n = length(y)
+	X = scale(X)
+data = data.frame(X,y)
+cv <- rep(0,B)
+for (i in 1:B) {
+ss <- floor(n*p)
+sam <- sample(1:n,ss,replace=F)
+#fit2 <- plsr(y~.,ncomp=ncomp,data=data[sam,])
+fit2 <- pcr(y~., ncomp=ncomp, data = data[sam,])
+ynew <- predict(fit2,ncomp=ncomp,newdata=data[-sam,])
+cv[i] <- sqrt(mean((y[-sam]-ynew)^2,na.rm=T))
+}
+#check = return(data.frame(RMSEP=cv))
+cv
+}
+```
+
+
+### PCR
+
+The final optimal number of components we chose for our Principal Component Regression model is ncomp=6.
+
+```{r}
+final.pcr.cv = pcr.cv(gasoline$NIR, gasoline$octane, ncomp = 6, p=.80, B=1000)
+mean(final.pcr.cv)
+```
+
+### PLS
+
+The final optimal number of components we chose for our Partial Least Squares Regression model is ncomp=5.
+
+We ran the Monte Carlo Cross-Validation multiple times with ncomp=4 and ncomp=5 and the best results with least variance were when we used 5 components to fir out plsr model.
+```{r}
+final.pls.cv = pls.cv(gasoline$NIR, gasoline$octane, ncomp = 5 , p=.80, B=1000)
+mean(final.pls.cv)
+```
+
+```{r}
+df = data.frame(PCR.RMSEP = mean(final.pcr.cv), PLS.RMSEP = mean(final.pls.cv))
+df
+```
+
+Comparing our final PCR and PLS models, PLS performed slightly better.
+
+
+
