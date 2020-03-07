@@ -8,6 +8,7 @@ output:
     
 ---
 
+# Genetic Marker Intensity Measurments 
 ```{r include=FALSE}
 #Libraries
 library(tidyr)
