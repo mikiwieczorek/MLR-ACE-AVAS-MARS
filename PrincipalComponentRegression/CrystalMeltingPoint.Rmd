@@ -5,7 +5,8 @@ date: "March 6, 2020"
 output: word_document
 ---
 
-Problem 2 – CRYSTAL MELTING POINT DATA
+CRYSTAL MELTING POINT DATA
+
 In their 2005 paper “General Boiling Point Prediction Based on a Diverse Compound Data Set and Artificial Neural Networks”, Karthikeyan, Glen, and Bender examine methods for the prediction of melting points using a number of 2D and 3D descriptors that capture molecular physicochemical and other graph-based properties.  The melting point is a fundamental physicochemical property of a molecule that is controlled by both single-molecule properties and intermolecular interactions due to packing in the solid state.  Thus, it is difficult to predict, and previously only melting point models for clearly defined and smaller compound sets have been developed.   The data frame QSAR.melt contains data for 4401 compounds that can be used to develop a model for melting point.  There data are contained in the file QSAR Melting Points (subset).csv on the course website.
 
 Goal:  Use PCR and PLS develop models and compare their ability to predict melting 
