@@ -1,6 +1,8 @@
 Using the data frame Lu2004.
 =============================
 
+[Microarray Gene Expression Data: Ridge, Lasso, and Elastic Net](https://github.com/mikiwieczorek/Machine-Learning-Supervised-Learning/tree/master/Shrinkage_Methods/Genetic_Marker_Intensity)
+
 The response Age is the first column of the data frame, the remaining 403 columns are genetic marker intensity measurements for 403 different genes.
 
 Using ridge and Lasso regression to develop optimal models for predicting Age of the subject. There are only n = 30 subjects in the full data set. This is an example of a wide data problem because n &lt;&lt; p (because 30 &lt;&lt; 403). Based on the research paper by Lu et al. (2004) that was published based on their analysis of these data.
@@ -8,8 +10,10 @@ Using ridge and Lasso regression to develop optimal models for predicting Age of
 
 
 
-College data frame in the ISLR library.
+College data frame in the ISLR library
 =======================================
+
+[College Data Analysis: Ridge, Lasso, and Elastic Net](https://github.com/mikiwieczorek/Machine-Learning-Supervised-Learning/tree/master/Shrinkage_Methods/CollegeData)
 
 U.S. News and World Report’s College Data
 
