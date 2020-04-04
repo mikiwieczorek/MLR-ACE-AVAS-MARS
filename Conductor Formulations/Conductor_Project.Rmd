@@ -23,7 +23,7 @@ require(tidyr)
 require(stringr)
 library(car)
 library(Ecfun)
-library(gridExtra)
+
 
 
 View(cond_com)
@@ -66,6 +66,7 @@ myBC = function(y)
 
 ```
 
+Space group itself is an interesting variable, as while it seems ordinal at first, space groups themselves are a bit complex and a higher group number is not a consitant difference. This will be accounted for later.
 
 Starting with Total Atoms
 ```{r}
@@ -73,7 +74,7 @@ Starting with Total Atoms
 Statplot(cond_train2$number_of_total_atoms)
 myBC(cond_train2$number_of_total_atoms)
 
-cond_train2_trans$number_of_total_atoms = bcPower(cond_train2_trans$number_of_total_atoms, 1.6)
+cond_train2_trans$number_of_total_atoms = bcPower(cond_train2$number_of_total_atoms, 1.6)
 
 Statplot(cond_train2_trans$number_of_total_atoms)
 
@@ -149,7 +150,294 @@ cond_train2_trans$lattice_vector_1_ang = bcPower(cond_train2$lattice_vector_1_an
 
 Statplot(cond_train2_trans$lattice_vector_1_ang)
 ```
+The next vector angle has similar shortcomings, but uses a different solution.
 
+```{r}
+Statplot(cond_train2$lattice_vector_2_ang)
+```
+
+This time, the bcPower function was more on target, with the power transformation of 0.7 being the best. Unfotunatley, the best in this case is not a very desireable variable structure, but once again still is an improvement.
+```{r}
+myBC(cond_train2$lattice_vector_2_ang)
+
+cond_train2_trans$lattice_vector_2_ang = bcPower(cond_train2$lattice_vector_2_ang, 0.7)
+
+Statplot(cond_train2_trans$lattice_vector_2_ang)
+```
+For the last vector angle, we have a similar story.
+
+```{r}
+Statplot(cond_train2$lattice_vector_3_ang)
+```
+The box cox gave the best result again with a negative 5th root, although much like the former our results still have shortcomings despite the imrpovements.
+```{r}
+myBC(cond_train2$lattice_vector_3_ang)
+
+cond_train2_trans$lattice_vector_3_ang = bcPower(cond_train2$lattice_vector_3_ang, -0.25)
+
+Statplot(cond_train2_trans$lattice_vector_3_ang)
+```
+The next three predictors are angle degrees, which all seem to hover around 90 degrees with occasional variation coming off of each. This will hopefull scale easily as a result.
+
+Starting with lattice angle alpha degree
+
+```{r}
+Statplot(cond_train2$lattice_angle_alpha_degree)
+```
+
+We can see some unique problems due to the nature of degree mseasures here, so we will try converting to radians in order to assist in this.
+
+```{r}
+radians_to_degree <- function(rad) {
+  (rad * 180) / (pi)
+}
+
+degree_to_rad <- function(deg) {
+  (deg * pi) / (180)
+}
+
+
+cond_train2_trans$lattice_angle_alpha_degree = degree_to_rad(cond_train2$lattice_angle_alpha_degree)
+
+Statplot(cond_train2_trans$lattice_angle_alpha_degree)
+```
+This should hopefully allow for easier transformation.
+
+
+
+```{r}
+myBC(cond_train2_trans$lattice_angle_alpha_degree)
+
+cond_train2_trans$lattice_angle_alpha_degree = bcPower(cond_train2_trans$lattice_angle_alpha_degree, -11.5 )
+
+Statplot(cond_train2_trans$lattice_angle_alpha_degree)
+```
+
+However, while it allows us to at least transform the data, it still does not allow us to truly fix it. We can box cox transform it with an abhorrent -11.5, but the massive amount of observations that close in around 90 simply leave us with odd results. 
+
+We see similar issues with the next to angle variables
+
+```{r}
+cond_train2_trans$lattice_angle_beta_degree = degree_to_rad(cond_train2$lattice_angle_beta_degree)
+
+Statplot(cond_train2_trans$lattice_angle_beta_degree)
+```
+
+```{r}
+myBC(cond_train2_trans$lattice_angle_beta_degree)
+
+cond_train2_trans$lattice_angle_beta_degree = bcPower(cond_train2_trans$lattice_angle_beta_degree, -15.5 )
+
+Statplot(cond_train2_trans$lattice_angle_beta_degree)
+```
+
+```{r}
+
+cond_train2_trans$lattice_angle_gamma_degree = degree_to_rad(cond_train2$lattice_angle_gamma_degree)
+
+Statplot(cond_train2_trans$lattice_angle_gamma_degree)
+```
+
+```{r}
+myBC(cond_train2_trans$lattice_angle_gamma_degree)
+
+cond_train2_trans$lattice_angle_gamma_degree = bcPower(cond_train2_trans$lattice_angle_gamma_degree, 2.2)
+
+Statplot(cond_train2_trans$lattice_angle_gamma_degree)
+```
+
+Ultimatley, what this process shows us is that in their current states, even transformed, many of these variables are not likely to be of great use to us. However, with a little enginuity we might be able to stretch these a little farther.
+
+
+Going back to Space groups, we can create categorical variables for each group as a way to focus in on that variables, as only 6 of the possible 230 existing space groups are actually used.
+
+
+```{r}
+require(sjmisc)
+
+cond_train2_trans %>% 
+  to_dummy(spacegroup, suffix = "label" ) %>% 
+  bind_cols(cond_train2_trans) %>% 
+  select(ID, spacegroup, everything()) -> cond_train3
+
+cond_train3 %>%
+  rename(Spacegroup_12 = V1, Spacegroup_33 = V2, Spacegroup_167 = V3, Spacegroup_194 = V4, Spacegroup_206 = V5, Spacegroup_227 = V6) -> cond_train3
+
+
+```
+
+
+
+Number of total atoms, while numeric, only has 6 unique values across 1,567 rows. While the consistancy is nice, it does make our ability to transform it into a normal scale fairly difficuly as seen pervisouly. To circumvent this problem, we have elected to turn it into categorical data as well, as we feel that the benefit of being able to focus in on a category of atoms outweights the loss in ordinal power. However, certain models still will be fed one or the other based on their preference.
+
+```{r}
+cond_train3 %>% 
+  to_dummy(number_of_total_atoms, suffix = "label" ) %>% 
+  bind_cols(cond_train3) %>% 
+  select(ID, number_of_total_atoms, everything()) -> cond_train3
+
+  cond_train3 %>%
+  rename(  atoms_10 = V1, atoms_20 = V2, atoms_30 = V3, atoms_40 = V4, atoms_60 = V5, atoms_80 = V6) -> cond_train3
+
+
+
+```
+
+
+We also want to make dummy varaibles based on whether or not certain elements are present within a potential superconductor, as this can help mitigate colineation problems in situations where these percentage varaibles would otherwise be related, and additionally they may prove useful on their own.
+
+
+```{r}
+cond_train3 %>%
+  mutate(Aluminum = ifelse(percent_atom_al > 0, 1, 0), Gallium = ifelse(percent_atom_ga > 0, 1, 0),  Indium = ifelse(percent_atom_in > 0, 1, 0)) -> cond_train3
+
+
+```
+
+
+```{r}
+
+write.csv(cond_train3, "cond_train_new_variables.csv", row.names = FALSE)
+
+```
+
+To start off, we will attempt a Mars Model using our new variables for just formation energy.
+
+
+```{r}
+
+drop.cols <- c('bandgap_energy_ev_log_y_plus_1','ID')
+
+cond_train3 %>%
+  select(-all_of(drop.cols)) -> cond_train3_form
+
+
+
+require(earth)
+
+
+form.mars = earth(formation_energy_ev_natom_log_y_plus_1~.,degree = 2, data = cond_train3_form )
+
+summary(form.mars)
+
+```
+
+
+```{r}
+plotmo(form.mars)
+```
+
+Just starting out, we have a generalized R^2 of roughly 0.85% before we start going crazing with parameterization, which is promising as far as the maximum potential goes. It also only picked 9 of the 26 predictors. Next, we will try to play around with a few setting to improve the model.
+
+```{r}
+form.mars = earth(formation_energy_ev_natom_log_y_plus_1~.,degree = 1, data = cond_train3_form )
+
+summary(form.mars)
+```
+Having interaction definetly is needed as shown above.
+
+```{r}
+form.mars = earth(formation_energy_ev_natom_log_y_plus_1~.,degree = 2, nk = 27, data = cond_train3_form )
+
+summary(form.mars)
+```
+After about 27 parameters, we stop gaining anything of note in terms of GRsq.
+
+
+```{r}
+form.mars = earth(formation_energy_ev_natom_log_y_plus_1~.,degree = 2, nk = 50, data = cond_train3_form, nprune =  20, pmethod = "exhaustive")
+
+summary(form.mars)
+
+
+```
+
+Utilizing exhautive pruning and cutting the model down to 20 variables, we can get a comparable R^2 with only 20 terms, which should help prevent us from overfitting.
+
+
+```{r}
+form.mars = earth(formation_energy_ev_natom_log_y_plus_1~.,degree = 2, nk = 50, data = cond_train3_form, nfold = 20, nprune =  20, pmethod = "exhaustive" )
+
+summary(form.mars)
+```
+
+Internal CV using 20 folds shows that we can consistantly reach this level, at least just on this set.
+
+We will now use the evimp command to look at variable importance for this model.
+
+```{r}
+evimp(form.mars)
+
+```
+
+Looking here, we can see that percent atoms for Aluminum and Indium are the most important, with lattive vector 3 ang, 2 ang, spacegroup, and  total atoms also pulling weight among a few others. None of our new categorical variables made the cut, but that makes sense given that Mars greatly prefers numeric data.
+
+```{r}
+evimp(form.mars, trim = FALSE)
+```
+
+Looking at all of the variables, are current model uses almost all of contributing ones in some capacity other then number_of_total_atoms used. However, because that number would be correlated with the amount of other elements used (due to the nature of those elements) it was likely disbarred for colineation reasons by the model.
+
+```{r}
+plotmo(form.mars)
+```
+For form energy preictions using Mars, here we have our best.
+
+Next, we will devise a model for bandgap energy
+
+```{r}
+drop.cols <- c('formation_energy_ev_natom_log_y_plus_1','ID')
+
+cond_train3 %>%
+  select(-all_of(drop.cols)) -> cond_train3_band
+
+
+
+
+band.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 2, data = cond_train3_band )
+
+summary(form.mars)
+
+
+
+```
+
+Starting off basic with intercation, we already have 92% GRSq. We some tweaking, we may be able to create a potentially powerful model here.
+
+```{r}
+form.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 1, data = cond_train3_band )
+
+summary(form.mars)
+
+```
+
+From the run above, we can see that interaction does not gain us a whole lot, so we may wish to remove it to keep the model simple.
+
+```{r}
+
+form.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 1, data = cond_train3_band, nk = 16 )
+
+summary(form.mars)
+
+
+```
+Unlike form energy, being able to zoom in on an exact amount is more difficult, so we will instead hit it harder with pruning combinations to try and simplfy or improve the model.
+
+```{r}
+form.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 2, data = cond_train3_band, nk = 30, nfold = 20, nprune =  15, pmethod = "exhaustive" )
+
+summary(form.mars)
+
+```
+
+After 20 exhaustive k-fold method interntal cross-validation, we found that an R^2 of aroud 0.92 was very consistant. Assuming this translates to actual prediction output, we have potentitally a very accurate model using fairly simple methodology.
+
+```{r}
+evimp(band.mars)
+
+```
+
+For predicting bandgap energy, a smaller number of variables are important. With spacegroup, percent_atom_in, vectors 1 and 3 and angles gamma and alpha being used. 
 
 
 
