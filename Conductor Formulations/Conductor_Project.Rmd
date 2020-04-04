@@ -257,7 +257,7 @@ require(sjmisc)
 
 cond_train2_trans %>% 
   to_dummy(spacegroup, suffix = "label" ) %>% 
-  bind_cols(cond_train2) %>% 
+  bind_cols(cond_train2_trans) %>% 
   select(ID, spacegroup, everything()) -> cond_train3
 
 cond_train3 %>%
@@ -297,7 +297,7 @@ cond_train3 %>%
 
 ```{r}
 
-#write.csv(cond_train3, "cond_train_new_variables.csv")
+write.csv(cond_train3, "cond_train_new_variables.csv", row.names = FALSE)
 
 ```
 
@@ -306,6 +306,7 @@ To start off, we will attempt a Mars Model using our new variables.
 
 ```{r}
 require(earth)
+
 ```
 
 
