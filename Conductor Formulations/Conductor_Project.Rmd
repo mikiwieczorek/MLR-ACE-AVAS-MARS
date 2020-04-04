@@ -255,7 +255,7 @@ Going back to Space groups, we can create categorical variables for each group a
 ```{r}
 require(sjmisc)
 
-cond_train2 %>% 
+cond_train2_trans %>% 
   to_dummy(spacegroup, suffix = "label" ) %>% 
   bind_cols(cond_train2) %>% 
   select(ID, spacegroup, everything()) -> cond_train3
@@ -301,6 +301,12 @@ cond_train3 %>%
 
 ```
 
+To start off, we will attempt a Mars Model using our new variables.
+
+
+```{r}
+require(earth)
+```
 
 
 
