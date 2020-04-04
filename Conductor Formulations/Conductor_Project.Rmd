@@ -296,7 +296,11 @@ cond_train3 %>%
 
 
 ```{r}
+<<<<<<< HEAD
 #write.csv(cond_train3, "cond_train_new_variables.csv")
+=======
+write.csv(cond_train3, "cond_train_new_variables.csv")
+>>>>>>> c7626ff2380a5604d7012af2acc51174ccec7e3b
 ```
 
 
