@@ -301,13 +301,149 @@ write.csv(cond_train3, "cond_train_new_variables.csv", row.names = FALSE)
 
 ```
 
-To start off, we will attempt a Mars Model using our new variables.
+To start off, we will attempt a Mars Model using our new variables for just formation energy.
 
 
 ```{r}
+
+drop.cols <- c('bandgap_energy_ev_log_y_plus_1','ID')
+
+cond_train3 %>%
+  select(-all_of(drop.cols)) -> cond_train3_form
+
+
+
 require(earth)
 
+
+form.mars = earth(formation_energy_ev_natom_log_y_plus_1~.,degree = 2, data = cond_train3_form )
+
+summary(form.mars)
+
 ```
+
+
+```{r}
+plotmo(form.mars)
+```
+
+Just starting out, we have a generalized R^2 of roughly 0.85% before we start going crazing with parameterization, which is promising as far as the maximum potential goes. It also only picked 9 of the 26 predictors. Next, we will try to play around with a few setting to improve the model.
+
+```{r}
+form.mars = earth(formation_energy_ev_natom_log_y_plus_1~.,degree = 1, data = cond_train3_form )
+
+summary(form.mars)
+```
+Having interaction definetly is needed as shown above.
+
+```{r}
+form.mars = earth(formation_energy_ev_natom_log_y_plus_1~.,degree = 2, nk = 27, data = cond_train3_form )
+
+summary(form.mars)
+```
+After about 27 parameters, we stop gaining anything of note in terms of GRsq.
+
+
+```{r}
+form.mars = earth(formation_energy_ev_natom_log_y_plus_1~.,degree = 2, nk = 50, data = cond_train3_form, nprune =  20, pmethod = "exhaustive")
+
+summary(form.mars)
+
+
+```
+
+Utilizing exhautive pruning and cutting the model down to 20 variables, we can get a comparable R^2 with only 20 terms, which should help prevent us from overfitting.
+
+
+```{r}
+form.mars = earth(formation_energy_ev_natom_log_y_plus_1~.,degree = 2, nk = 50, data = cond_train3_form, nfold = 20, nprune =  20, pmethod = "exhaustive" )
+
+summary(form.mars)
+```
+
+Internal CV using 20 folds shows that we can consistantly reach this level, at least just on this set.
+
+We will now use the evimp command to look at variable importance for this model.
+
+```{r}
+evimp(form.mars)
+
+```
+
+Looking here, we can see that percent atoms for Aluminum and Indium are the most important, with lattive vector 3 ang, 2 ang, spacegroup, and  total atoms also pulling weight among a few others. None of our new categorical variables made the cut, but that makes sense given that Mars greatly prefers numeric data.
+
+```{r}
+evimp(form.mars, trim = FALSE)
+```
+
+Looking at all of the variables, are current model uses almost all of contributing ones in some capacity other then number_of_total_atoms used. However, because that number would be correlated with the amount of other elements used (due to the nature of those elements) it was likely disbarred for colineation reasons by the model.
+
+```{r}
+plotmo(form.mars)
+```
+For form energy preictions using Mars, here we have our best.
+
+Next, we will devise a model for bandgap energy
+
+```{r}
+drop.cols <- c('formation_energy_ev_natom_log_y_plus_1','ID')
+
+cond_train3 %>%
+  select(-all_of(drop.cols)) -> cond_train3_band
+
+
+
+
+band.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 2, data = cond_train3_band )
+
+summary(form.mars)
+
+
+
+```
+
+Starting off basic with intercation, we already have 92% GRSq. We some tweaking, we may be able to create a potentially powerful model here.
+
+```{r}
+form.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 1, data = cond_train3_band )
+
+summary(form.mars)
+
+```
+
+From the run above, we can see that interaction does not gain us a whole lot, so we may wish to remove it to keep the model simple.
+
+```{r}
+
+form.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 1, data = cond_train3_band, nk = 16 )
+
+summary(form.mars)
+
+
+```
+Unlike form energy, being able to zoom in on an exact amount is more difficult, so we will instead hit it harder with pruning combinations to try and simplfy or improve the model.
+
+```{r}
+form.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 2, data = cond_train3_band, nk = 30, nfold = 20, nprune =  15, pmethod = "exhaustive" )
+
+summary(form.mars)
+
+```
+
+After 20 exhaustive k-fold method interntal cross-validation, we found that an R^2 of aroud 0.92 was very consistant. Assuming this translates to actual prediction output, we have potentitally a very accurate model using fairly simple methodology.
+
+```{r}
+evimp(band.mars)
+
+```
+
+For predicting bandgap energy, a smaller number of variables are important. With spacegroup, percent_atom_in, vectors 1 and 3 and angles gamma and alpha being used. 
+
+
+
+
+
+
 
 
 
