@@ -294,6 +294,70 @@ cond_train3 %>%
 
 ```
 
+Now, we will go back and do all of this to the test set
+
+```{r}
+cond_test_ready = cond_teat
+
+cond_test_ready$number_of_total_atoms = bcPower(cond_teat$number_of_total_atoms, 1.6)
+
+cond_test_ready$percent_atom_al = logit(cond_teat$percent_atom_al)
+
+cond_test_ready$percent_atom_ga = logit(cond_teat$percent_atom_ga)
+
+cond_test_ready$percent_atom_in = logit(cond_teat$percent_atom_in)
+
+cond_test_ready$lattice_vector_1_ang = bcPower(cond_teat$lattice_vector_1_ang, 0.25)
+
+cond_test_ready$lattice_vector_2_ang = bcPower(cond_teat$lattice_vector_2_ang, 0.7)
+
+cond_test_ready$lattice_vector_3_ang = bcPower(cond_teat$lattice_vector_3_ang, -0.25)
+
+cond_test_ready$lattice_angle_alpha_degree = degree_to_rad(cond_teat$lattice_angle_alpha_degree)
+
+cond_test_ready$lattice_angle_beta_degree = degree_to_rad(cond_teat$lattice_angle_beta_degree)
+
+cond_test_ready$lattice_angle_gamma_degree = degree_to_rad(cond_teat$lattice_angle_gamma_degree)
+
+cond_test_ready$lattice_angle_alpha_degree = bcPower(cond_teat$lattice_angle_alpha_degree, -11.5 )
+
+cond_test_ready$lattice_angle_beta_degree = bcPower(cond_teat$lattice_angle_beta_degree, -15.5 )
+
+cond_test_ready$lattice_angle_gamma_degree = bcPower(cond_teat$lattice_angle_gamma_degree, 2.2)
+
+#spacegroup
+cond_test_ready %>% 
+  to_dummy(spacegroup, suffix = "label" ) %>% 
+  bind_cols(cond_test_ready) %>% 
+  select(ID, spacegroup, everything()) -> cond_test_ready
+
+cond_test_ready %>%
+  rename(Spacegroup_12 = V1, Spacegroup_33 = V2, Spacegroup_167 = V3, Spacegroup_194 = V4, Spacegroup_206 = V5, Spacegroup_227 = V6) -> cond_test_ready
+
+
+#total atoms
+cond_test_ready %>% 
+  to_dummy(number_of_total_atoms, suffix = "label" ) %>% 
+  bind_cols(cond_test_ready) %>% 
+  select(ID, number_of_total_atoms, everything()) -> cond_test_ready
+
+  cond_test_ready %>%
+  rename(  atoms_10 = V1, atoms_20 = V2, atoms_30 = V3, atoms_40 = V4, atoms_60 = V5, atoms_80 = V6) -> cond_test_ready
+
+  
+  cond_test_ready %>%
+  mutate(Aluminum = ifelse(percent_atom_al > 0, 1, 0), Gallium = ifelse(percent_atom_ga > 0, 1, 0),  Indium = ifelse(percent_atom_in > 0, 1, 0)) -> cond_test_ready
+
+  
+  
+  
+cond_test_ready %>%
+  rename( formation_energy_ev_natom_log_y_plus_1 = formation_energy_ev_natom, bandgap_energy_ev_log_y_plus_1 = bandgap_energy_ev)
+```
+
+
+
+
 
 ```{r}
 
@@ -365,6 +429,18 @@ Internal CV using 20 folds shows that we can consistantly reach this level, at l
 
 We will now use the evimp command to look at variable importance for this model.
 
+
+```{r}
+plot(form.mars)
+```
+
+
+```{r}
+plotmo(form.mars)
+```
+
+
+
 ```{r}
 evimp(form.mars)
 
@@ -396,7 +472,7 @@ cond_train3 %>%
 
 band.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 2, data = cond_train3_band )
 
-summary(form.mars)
+summary(band.mars)
 
 
 
@@ -405,9 +481,9 @@ summary(form.mars)
 Starting off basic with intercation, we already have 92% GRSq. We some tweaking, we may be able to create a potentially powerful model here.
 
 ```{r}
-form.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 1, data = cond_train3_band )
+band.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 1, data = cond_train3_band )
 
-summary(form.mars)
+summary(band.mars)
 
 ```
 
@@ -415,32 +491,58 @@ From the run above, we can see that interaction does not gain us a whole lot, so
 
 ```{r}
 
-form.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 1, data = cond_train3_band, nk = 16 )
+band.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 1, data = cond_train3_band, nk = 16 )
 
-summary(form.mars)
+summary(band.mars)
 
 
 ```
 Unlike form energy, being able to zoom in on an exact amount is more difficult, so we will instead hit it harder with pruning combinations to try and simplfy or improve the model.
 
 ```{r}
-form.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 2, data = cond_train3_band, nk = 30, nfold = 20, nprune =  15, pmethod = "exhaustive" )
+band.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 2, data = cond_train3_band, nk = 30, nfold = 20, nprune =  15, pmethod = "exhaustive" )
 
-summary(form.mars)
+summary(band.mars)
 
 ```
 
 After 20 exhaustive k-fold method interntal cross-validation, we found that an R^2 of aroud 0.92 was very consistant. Assuming this translates to actual prediction output, we have potentitally a very accurate model using fairly simple methodology.
+
+
+
+```{r}
+plot(band.mars)
+```
+
+
+```{r}
+plotmo(band.mars)
+```
+
 
 ```{r}
 evimp(band.mars)
 
 ```
 
-For predicting bandgap energy, a smaller number of variables are important. With spacegroup, percent_atom_in, vectors 1 and 3 and angles gamma and alpha being used. 
+For predicting bandgap energy, a smaller number of variables are important. With spacegroup, percent_atom_in, vectors 1 and 3 and angles gamma and alpha being used. Percent atom in the structure though was by far the most important, being 40% of the total models power in our case.
+
+```{r}
+
+evimp(band.mars, trim = FALSE)
+
+```
+
+Compared to formation energy, way less variables were important for the Mars Model, with variables related to the core spatial structure of the observation being far more important than the chemnical makeup. In a sense, it is a bit of the inverse of formation energy as far as predicting.
 
 
+```{r}
 
+band.evimp <- evimp(band.mars)
+
+plot(band.evimp, cex.var = 0.6)
+
+```
 
 
 
