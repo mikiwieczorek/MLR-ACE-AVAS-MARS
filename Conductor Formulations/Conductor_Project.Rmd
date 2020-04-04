@@ -1,0 +1,162 @@
+---
+title: "Conductor_Project"
+author: "Samuel A, Mikolaj W"
+date: "April 3, 2020"
+output: word_document
+---
+
+
+Preperation Work and packages
+```{r include=FALSE}
+
+setwd("C:/Users/qs5834mm/Desktop/DSCI 425/Git_R/Assignment_2/MLR-ACE-AVAS-MARS/Conductor Formulations")
+load("C:/Users/qs5834mm/Desktop/DSCI 425/R/mult.Rdata")
+load("C:/Users/qs5834mm/Desktop/DSCI 425/R/Regression.Rdata")
+
+cond_com =  read.csv("Conductors (combined).csv")
+cond_train = read.csv("Conductors (train).csv")
+cond_teat = read.csv("Conductors (test).csv")
+
+require(dplyr)
+require(ggplot2)
+require(tidyr)
+require(stringr)
+library(car)
+library(Ecfun)
+library(gridExtra)
+
+
+View(cond_com)
+
+
+
+```
+
+Format the response in the training set to ln(y + 1).
+```{r}
+cond_train2 = cond_train
+
+cond_train %>%
+  mutate(formation_energy_ev_natom_log_y_plus_1 = log(formation_energy_ev_natom + 1), 
+         bandgap_energy_ev_log_y_plus_1 = log(bandgap_energy_ev + 1)) -> cond_train2
+
+drop.cols <- c('formation_energy_ev_natom', 'bandgap_energy_ev')
+
+cond_train2 %>%
+  select(-all_of(drop.cols)) -> cond_train2
+  
+
+```
+
+Starting out, well try and see what transformations would be optimal for existing variables. There are only 11 in total be defualt, so going through each on an individual basis is more then doable. We also will follow a doctrine of optimization being greater then explainability for this approach, as one of our chief goals is predictions quality of predictions.
+
+
+```{r}
+
+cond_train2_trans = cond_train2
+
+#checks for optimal transformations
+myBC = function(y)
+{
+  BCtran(y)
+  results = powerTransform(y)
+  summary(results)
+}
+
+
+```
+
+
+Starting with Total Atoms
+```{r}
+
+Statplot(cond_train2$number_of_total_atoms)
+myBC(cond_train2$number_of_total_atoms)
+
+cond_train2_trans$number_of_total_atoms = bcPower(cond_train2_trans$number_of_total_atoms, 1.6)
+
+Statplot(cond_train2_trans$number_of_total_atoms)
+
+```
+
+
+These next three variables measure the makeup of the elements Galluim, Aluminum, and Indium as percentages. All three are of course related in that regard, and certain makeups may include some
+or all of each of these. This may make it difficult to view each as an individual in terms of model
+utilization, but there are a few things we can try. First, we can go through and simply transform each
+variable.
+
+
+Percent_atom_al is next
+```{r}
+
+Statplot(cond_train2$percent_atom_al)
+
+
+
+```
+Since we are workiing with percentage data, we thought it would be best to use a logit trasnformation here.
+
+```{r}
+cond_train2_trans$percent_atom_al = logit(cond_train2$percent_atom_al)
+
+Statplot(cond_train2_trans$percent_atom_al)
+```
+The improvement is noticable, although the zeros still tend to have a negative impact.
+
+Next was percent_atom_ga
+
+```{r}
+Statplot(cond_train2$percent_atom_ga)
+```
+This variale similarly was best handled with logit.
+
+```{r}
+cond_train2_trans$percent_atom_ga = logit(cond_train2$percent_atom_ga)
+
+Statplot(cond_train2_trans$percent_atom_ga)
+```
+
+We still have a problem with zeros, although in every other regard we have improved.
+
+
+percent_atom_in is the final variable in this series, and likewise was handled similarly.
+
+```{r}
+Statplot(cond_train2$percent_atom_in)
+```
+
+
+```{r}
+cond_train2_trans$percent_atom_in = logit(cond_train2$percent_atom_in)
+
+Statplot(cond_train2_trans$percent_atom_in)
+```
+
+
+
+Next, we have a series of lattice vector variables that should be simple enough to box cox transform.
+
+```{r}
+Statplot(cond_train2$lattice_vector_1_ang)
+```
+
+Our myBC function tends to indicate using a power of 0.6, however, better results through testing were found in the for of a 4th root transformation. While the result is still not ideal, the improvement is still massive and should not be discounted. This may prove to be the begining of a pattern in terms of how the lattive vectors all hold.
+
+```{r}
+myBC(cond_train2$lattice_vector_1_ang)
+
+cond_train2_trans$lattice_vector_1_ang = bcPower(cond_train2$lattice_vector_1_ang, 0.25)
+
+Statplot(cond_train2_trans$lattice_vector_1_ang)
+```
+
+
+
+
+
+
+
+
+
+
+
