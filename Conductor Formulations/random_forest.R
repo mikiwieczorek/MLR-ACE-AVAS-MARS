@@ -197,6 +197,7 @@ cond.rf = randomForest(y~.,data=X,importance=F)
 #trainmodel1 is X
 #response is y
 {n = nrow(X)
+set.seed(2019)
 sam = sample(1:n,size=floor(n*.6667),replace=F)
 X.train = X[sam,] #form training dataset
 X.valid = X[-sam,] #form validation dataset
@@ -302,8 +303,8 @@ rfimp(cond.final, horiz = F)
 
 
 ############ Model 2 #################
-{y = train_model2$bandgap_energy_ev_log_y_plus_1
-X = train_model2
+{y = train_model2_no_box_cox$bandgap_energy_ev_log_y_plus_1
+X = train_model2_no_box_cox
 cond.rf = randomForest(y~.,data=X,importance=T)
 }
 #1st: choose optimal mtry's
@@ -361,6 +362,7 @@ cond.rf = randomForest(y~.,data=X,importance=T)
 #trainmodel2 is X
 #response is y
 {n = nrow(X)
+set.seed(2019)
 sam = sample(1:n,size=floor(n*.6667),replace=F)
 X.train = X[sam,] #form training dataset
 X.valid = X[-sam,] #form validation dataset
