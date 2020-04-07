@@ -1,7 +1,0 @@
----
-title: "NeuralNets"
-author: "Samuel Andrews & Mikolaj Wieczorek"
-date: "2/18/2020"
-output: word_document
----
-

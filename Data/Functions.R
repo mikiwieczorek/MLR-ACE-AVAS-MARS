@@ -126,3 +126,72 @@ nnet.sscv = function(x,y,fit,data,p=.667,B=10,size=5,decay=.001,skip=F,linout=T,
   return(temp)
 }
 
+#Monte Carlo Cross-Validation of Ridge and Lasso Regression
+glmnet.ssmc = function(X,y,p=.667,M=100,alpha=1,lambda=1) {
+  RMSEP = rep(0,M)
+  MAEP = rep(0,M)
+  MAPEP = rep(0,M)
+  n = nrow(X)
+  for (i in 1:M) {
+    ss = floor(n*p)
+    sam = sample(1:n,ss,replace=F)
+    fit = glmnet(X[sam,],y[sam],lambda=lambda,alpha=alpha)
+    ypred = predict(fit,newx=X[-sam,])
+    RMSEP[i] = sqrt(mean((y[-sam]-ypred)^2))
+    MAEP[i] = mean(abs(y[-sam]-ypred))
+    yp = ypred[y[-sam]!=0]
+    ya = y[-sam][y[-sam]!=0]
+    MAPEP[i]=mean(abs(yp-ya)/ya)
+  }
+  cat("RMSEP =",mean(RMSEP),"  MAEP=",mean(MAEP),"  MAPEP=",mean(MAPEP))
+  cv = return(data.frame(RMSEP=RMSEP,MAEP=MAEP,MAPEP=MAPEP)) 
+}
+
+#when response is logged
+glmnet.sslog = function(X,y,p=.667,M=100,alpha=1,lambda=1) {
+  RMSEP = rep(0,M)
+  MAEP = rep(0,M)
+  MAPEP = rep(0,M)
+  n = nrow(X)
+  for (i in 1:M) {
+    ss = floor(n*p)
+    sam = sample(1:n,ss,replace=F)
+    fit = glmnet(X[sam,],y[sam],lambda=lambda,alpha=alpha)
+    ypred = predict(fit,newx=X[-sam,])
+    ya = exp(y[-sam])
+    ypred = exp(ypred)
+    RMSEP[i] = sqrt(mean((ya-ypred)^2))
+    MAEP[i] = mean(abs(ya-ypred))
+    MAPEP[i]=mean(abs(ypred-ya)/ya)
+  }
+  cat("RMSEP =",mean(RMSEP),"  MAEP=",mean(MAEP),"  MAPEP=",mean(MAPEP))
+  cv = return(data.frame(RMSEP=RMSEP,MAEP=MAEP,MAPEP=MAPEP))
+  
+}
+
+
+#Monte Carlo Cross-Validation of OLS Regression Models
+MLR.ssmc = function(fit,p=.667,M=100) {
+  RMSEP = rep(0,M)
+  MAEP = rep(0,M)
+  MAPEP = rep(0,M)
+  y = fit$model[,1]
+  x = fit$model[,-1]
+  data = fit$model
+  n = nrow(data)
+  for (i in 1:M) {
+    ss = floor(n*p)
+    sam = sample(1:n,ss,replace=F)
+    fit2 = lm(formula(fit),data=data[sam,])
+    ypred = predict(fit2,newdata=x[-sam,])
+    RMSEP[i] = sqrt(mean((y[-sam]-ypred)^2))
+    MAEP[i] = mean(abs(y[-sam]-ypred))
+    yp = ypred[y[-sam]!=0]
+    ya = y[-sam][y[-sam]!=0]
+    MAPEP[i]=mean(abs(yp-ya)/ya)
+  }
+  cat("RMSEP =",mean(RMSEP),"  MAEP=",mean(MAEP),"  MAPEP=",mean(MAPEP))
+  cv = return(data.frame(RMSEP=RMSEP,MAEP=MAEP,MAPEP=MAPEP))
+}
+
+
