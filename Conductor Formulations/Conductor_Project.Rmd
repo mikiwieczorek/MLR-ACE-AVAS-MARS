@@ -294,10 +294,77 @@ cond_train3 %>%
 
 ```
 
+Now, we will go back and do all of this to the test set
+
+```{r}
+cond_test_ready = cond_teat
+
+cond_test_ready$number_of_total_atoms = bcPower(cond_teat$number_of_total_atoms, 1.6)
+
+cond_test_ready$percent_atom_al = logit(cond_teat$percent_atom_al)
+
+cond_test_ready$percent_atom_ga = logit(cond_teat$percent_atom_ga)
+
+cond_test_ready$percent_atom_in = logit(cond_teat$percent_atom_in)
+
+cond_test_ready$lattice_vector_1_ang = bcPower(cond_teat$lattice_vector_1_ang, 0.25)
+
+cond_test_ready$lattice_vector_2_ang = bcPower(cond_teat$lattice_vector_2_ang, 0.7)
+
+cond_test_ready$lattice_vector_3_ang = bcPower(cond_teat$lattice_vector_3_ang, -0.25)
+
+cond_test_ready$lattice_angle_alpha_degree = degree_to_rad(cond_teat$lattice_angle_alpha_degree)
+
+cond_test_ready$lattice_angle_beta_degree = degree_to_rad(cond_teat$lattice_angle_beta_degree)
+
+cond_test_ready$lattice_angle_gamma_degree = degree_to_rad(cond_teat$lattice_angle_gamma_degree)
+
+cond_test_ready$lattice_angle_alpha_degree = bcPower(cond_teat$lattice_angle_alpha_degree, -11.5 )
+
+cond_test_ready$lattice_angle_beta_degree = bcPower(cond_teat$lattice_angle_beta_degree, -15.5 )
+
+cond_test_ready$lattice_angle_gamma_degree = bcPower(cond_teat$lattice_angle_gamma_degree, 2.2)
+
+#spacegroup
+cond_test_ready %>% 
+  to_dummy(spacegroup, suffix = "label" ) %>% 
+  bind_cols(cond_test_ready) %>% 
+  select(ID, spacegroup, everything()) -> cond_test_ready
+
+cond_test_ready %>%
+  rename(Spacegroup_12 = V1, Spacegroup_33 = V2, Spacegroup_167 = V3, Spacegroup_194 = V4, Spacegroup_206 = V5, Spacegroup_227 = V6) -> cond_test_ready
+
+
+#total atoms
+cond_test_ready %>% 
+  to_dummy(number_of_total_atoms, suffix = "label" ) %>% 
+  bind_cols(cond_test_ready) %>% 
+  select(ID, number_of_total_atoms, everything()) -> cond_test_ready
+
+  cond_test_ready %>%
+  rename(  atoms_10 = V1, atoms_20 = V2, atoms_30 = V3, atoms_40 = V4, atoms_60 = V5, atoms_80 = V6) -> cond_test_ready
+
+  
+  cond_test_ready %>%
+  mutate(Aluminum = ifelse(percent_atom_al > 0, 1, 0), Gallium = ifelse(percent_atom_ga > 0, 1, 0),  Indium = ifelse(percent_atom_in > 0, 1, 0)) -> cond_test_ready
+
+  
+  
+  
+cond_test_ready %>%
+  rename( formation_energy_ev_natom_log_y_plus_1 = formation_energy_ev_natom, bandgap_energy_ev_log_y_plus_1 = bandgap_energy_ev) -> cond_test_ready
+
+```
+
+
+
+Writing both .csv files for future use
 
 ```{r}
 
 write.csv(cond_train3, "cond_train_new_variables.csv", row.names = FALSE)
+
+write.csv(cond_test_ready, "cond_test_new_variables.csv", row.names = FALSE)
 
 ```
 
@@ -365,6 +432,18 @@ Internal CV using 20 folds shows that we can consistantly reach this level, at l
 
 We will now use the evimp command to look at variable importance for this model.
 
+
+```{r}
+plot(form.mars)
+```
+
+
+```{r}
+plotmo(form.mars)
+```
+
+
+
 ```{r}
 evimp(form.mars)
 
@@ -396,7 +475,7 @@ cond_train3 %>%
 
 band.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 2, data = cond_train3_band )
 
-summary(form.mars)
+summary(band.mars)
 
 
 
@@ -405,9 +484,9 @@ summary(form.mars)
 Starting off basic with intercation, we already have 92% GRSq. We some tweaking, we may be able to create a potentially powerful model here.
 
 ```{r}
-form.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 1, data = cond_train3_band )
+band.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 1, data = cond_train3_band )
 
-summary(form.mars)
+summary(band.mars)
 
 ```
 
@@ -415,32 +494,627 @@ From the run above, we can see that interaction does not gain us a whole lot, so
 
 ```{r}
 
-form.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 1, data = cond_train3_band, nk = 16 )
+band.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 1, data = cond_train3_band, nk = 16 )
 
-summary(form.mars)
+summary(band.mars)
 
 
 ```
 Unlike form energy, being able to zoom in on an exact amount is more difficult, so we will instead hit it harder with pruning combinations to try and simplfy or improve the model.
 
 ```{r}
-form.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 2, data = cond_train3_band, nk = 30, nfold = 20, nprune =  15, pmethod = "exhaustive" )
+band.mars = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 2, data = cond_train3_band, nk = 30, nfold = 20, nprune =  15, pmethod = "exhaustive" )
 
-summary(form.mars)
+summary(band.mars)
 
 ```
 
 After 20 exhaustive k-fold method interntal cross-validation, we found that an R^2 of aroud 0.92 was very consistant. Assuming this translates to actual prediction output, we have potentitally a very accurate model using fairly simple methodology.
+
+
+
+```{r}
+plot(band.mars)
+```
+
+
+```{r}
+plotmo(band.mars)
+```
+
 
 ```{r}
 evimp(band.mars)
 
 ```
 
-For predicting bandgap energy, a smaller number of variables are important. With spacegroup, percent_atom_in, vectors 1 and 3 and angles gamma and alpha being used. 
+For predicting bandgap energy, a smaller number of variables are important. With spacegroup, percent_atom_in, vectors 1 and 3 and angles gamma and alpha being used. Percent atom in the structure though was by far the most important, being 40% of the total models power in our case.
+
+```{r}
+
+evimp(band.mars, trim = FALSE)
+
+```
+
+Compared to formation energy, way less variables were important for the Mars Model, with variables related to the core spatial structure of the observation being far more important than the chemnical makeup. In a sense, it is a bit of the inverse of formation energy as far as predicting.
+
+
+```{r}
+
+band.evimp <- evimp(band.mars)
+
+plot(band.evimp, cex.var = 0.6)
+
+```
+Final Metrics
+```{r}
+
+
+#cross validation function
+MARS.cv = function(response,data, degree, nk, nprune, pmethod, p=.667,B=10) {
+  n <- length(response)
+  MSE <- rep(0,B)
+  MAE = rep(0,B)
+  MAPE = rep(0,B)
+  MSLE = rep(0,B)
+  for (i in 1:B) {
+    ss <- floor(n*p)
+    sam <- sample(1:n,ss,replace=F)
+    
+    fit2 <- earth(response[sam]~.,degree = degree, data = data[sam,], nk = nk, nfold = 1, nprune =  nprune, pmethod = pmethod )
+    
+    ynew <- predict(fit2,newdata=data[-sam,])
+    MSE[i] = mean((response[-sam]-ynew)^2)
+    MSLE[i] = mean((log(ynew+1) - log(response[-sam]+1))^2)
+    MAE[i] = mean(abs(response[-sam]-ynew))
+    MAPE[i] = mean(abs(response[-sam] - ynew)/response[-sam])
+  }
+  cat("RMSLEP =",sqrt(mean(MSLE)),"RMSEP =",sqrt(mean(MSE)),"  MAEP=",mean(MAE),"  MAPEP=",mean(MAPE))
+  cv = return(data.frame(RMSLEP = sqrt(MSLE),RMSEP=sqrt(MSE),MAEP=MAE,MAPEP=MAPE))
+}
+
+
+MARS.cv(response = cond_train3_band$bandgap_energy_ev_log_y_plus_1, data = cond_train3_band[,-24], nk = 30, nprune = 15, pmethod = "exhaustive", degree = 2, B = 20, p=0.667)
+
+#RMSLEP = 0.05490808 RMSEP = 0.09487381   MAEP= 0.05763223   MAPEP= 1.313522
+
+MARS.cv(response = cond_train3_form$formation_energy_ev_natom_log_y_plus_1, data = cond_train3_form[,-24], nk = 50, nprune = 20, pmethod = "exhaustive", degree = 2, B = 20, p=0.667)
+
+#RMSLEP = 0.03042171 RMSEP = 0.03754247   MAEP= 0.02394626   MAPEP= 0.2698358
+
+```
+
+
+```{r eval=FALSE, include=FALSE}
+
+# 
+# response = cond_train3_band$bandgap_energy_ev_log_y_plus_1
+# data = cond_train3_band[,-24]
+# nk = 30
+# nprune = 15
+# pmethod = "exhaustive"
+# degree = 2
+# B = 20
+# p=0.667
+# 
+# n <- length(response)
+# 
+# 
+# ss <- floor(n*p)
+# sam <- sample(1:n,ss,replace=F)
+# 
+# length(response[sam])
+# #View(data[sam,])
+# 
+#     
+#     fit2 <- earth(response[sam]~.,degree = degree, data = data[sam,], nk = nk, nfold = 1, nprune =  nprune, pmethod = pmethod )
+#     
+#     ynew <- predict(fit2,newdata=data[-sam,])
+#     MSE = mean((response[-sam]-ynew)^2)
+#     MSLE = mean((log(ynew+1) - log(response[-sam]+1))^2)
+#     MAE = mean(abs(response[-sam]-ynew))
+#     MAPE = mean(abs(response[-sam] - ynew)/response[-sam])
+
+```
 
 
 
+
+While the Mars results look promising, certain variables were not fully uilized, particularly are categorical ones. Treed regression may benfit more from this, and also may pick on more direct patterns the Mars model missed, so it was tried as well.
+
+```{r}
+require(rpart)
+require(maptree)
+require(Cubist)
+
+
+form_test_x = cond_train3_form[,-24]
+
+form_test_y = cond_train3_form[,24]
+
+cond_cub = cubist(x = form_test_x, y = form_test_y, committees = 1)
+
+#summary(cond_cub)
+```
+
+The summary output was shortened to just show evaluation results.
+
+Evaluation on training data (1567 cases):
+
+    Average  |error|          0.0236536
+    Relative |error|               0.33
+    Correlation coefficient        0.90
+
+
+	Attribute usage:
+	  Conds  Model
+
+	   84%    86%    percent_atom_in
+	   57%    87%    lattice_vector_2_ang
+	   46%    95%    percent_atom_al
+	   41%   100%    lattice_vector_3_ang
+	   39%    45%    spacegroup
+	   26%    54%    percent_atom_ga
+	   11%    36%    lattice_angle_gamma_degree
+	   11%           lattice_angle_alpha_degree
+	   10%    48%    lattice_vector_1_ang
+	    8%           lattice_angle_beta_degree
+
+
+Time: 0.1 secs
+
+
+From here, we can see that with no boosting a basic treed model still gets a correlation coefficent of 0.90, which is impressive given how easy the implementation is. However, playing around with nearest neighbor adjustements, we may be able to psuh this further.
+
+
+```{r message=FALSE, warning=FALSE}
+
+#cross validation function
+cubist.cv = function(x,y,p=.667,B=10,committees=1,neighbors=0) {
+  n <- length(y)
+  MSE <- rep(0,B)
+  MAE = rep(0,B)
+  MAPE = rep(0,B)
+  MSLE = rep(0,B)
+  for (i in 1:B) {
+    ss <- floor(n*p)
+    sam <- sample(1:n,ss,replace=F)
+    fit2 <- cubist(x[sam,],y[sam],committees=committees,neighbors=neighbors)
+    ynew <- predict(fit2,newdata=x[-sam,],neighbors=neighbors)
+    MSE[i] = mean((y[-sam]-ynew)^2)
+    MSLE[i] = mean((log(ynew+1) - log(y[-sam]+1))^2)
+    MAE[i] = mean(abs(y[-sam]-ynew))
+    MAPE[i] = mean(abs(y[-sam] - ynew)/y[-sam])
+  }
+  cat("RMSLEP =",sqrt(mean(MSLE)),"RMSEP =",sqrt(mean(MSE)),"  MAEP=",mean(MAE),"  MAPEP=",mean(MAPE))
+  cv = return(data.frame(RMSLEP = sqrt(MSLE),RMSEP=sqrt(MSE),MAEP=MAE,MAPEP=MAPE))
+}
+
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 1, neighbors = 0)
+# RMSLEP = 0.03224218 RMSEP = 0.03927782   MAEP= 0.02463013   MAPEP= 0.2780565
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 1, neighbors = 1)
+# RMSLEP = 0.03555901 RMSEP = 0.04348276   MAEP= 0.02616518   MAPEP= 0.2537234
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 1, neighbors = 2)
+# RMSLEP = 0.03314788 RMSEP = 0.04045804   MAEP= 0.02460608   MAPEP= 0.2357997
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 1, neighbors = 3)
+# RMSLEP = 0.03148721 RMSEP = 0.03828172   MAEP= 0.02371599   MAPEP= 0.2223311
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 1, neighbors = 4)
+# RMSLEP = 0.03325151 RMSEP = 0.04083543   MAEP= 0.02441508   MAPEP= 0.2283243
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 1, neighbors = 5)
+# RMSLEP = 0.03205617 RMSEP = 0.03912071   MAEP= 0.02406652   MAPEP= 0.2333697
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 1, neighbors = 6)
+# RMSLEP = 0.03177122 RMSEP = 0.03893749   MAEP= 0.02381878   MAPEP= 0.219773
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 1, neighbors = 7)
+# RMSLEP = 0.03295414 RMSEP = 0.0406539   MAEP= 0.02417382   MAPEP= 0.239655
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 1, neighbors = 8)
+# RMSLEP = 0.03240087 RMSEP = 0.0398106   MAEP= 0.02403365   MAPEP= 0.2549661
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 1, neighbors = 9)
+# RMSLEP = 0.03144095 RMSEP = 0.0382648   MAEP= 0.02347479   MAPEP= 0.2271004
+
+
+
+
+
+```
+
+Trying all possible values of neighbor, we can deciseivley say that using a setting of 9 bodes the best for our model. We will now use a similar process for boosting.
+
+```{r}
+
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 1, neighbors = 9)
+# RMSLEP = 0.03237573 RMSEP = 0.03984964   MAEP= 0.02395975   MAPEP= 0.2510261
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 5, neighbors = 9)
+# RMSLEP = 0.02893934 RMSEP = 0.03519775   MAEP= 0.02235095   MAPEP= 0.2099355
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 10, neighbors = 9)
+# RMSLEP = 0.02937464 RMSEP = 0.03593288   MAEP= 0.02234299   MAPEP= 0.2145308
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 15, neighbors = 9)
+# RMSLEP = 0.02851337 RMSEP = 0.03484903   MAEP= 0.0219714   MAPEP= 0.2110919
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 20, neighbors = 9)
+# RMSLEP = 0.02828576 RMSEP = 0.03436924   MAEP= 0.02208001   MAPEP= 0.2271556
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 25, neighbors = 9)
+# RMSLEP = 0.02847509 RMSEP = 0.03471625   MAEP= 0.02216734   MAPEP= 0.229742
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 30, neighbors = 9)
+# RMSLEP = 0.0283022 RMSEP = 0.03460824   MAEP= 0.02184816   MAPEP= 0.2198067
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 35, neighbors = 9)
+# RMSLEP = 0.02717477 RMSEP = 0.0330505   MAEP= 0.02148992   MAPEP= 0.2043025
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 40, neighbors = 9)
+# RMSLEP = 0.02864012 RMSEP = 0.03495877   MAEP= 0.02190446   MAPEP= 0.2211497
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 45, neighbors = 9)
+# RMSLEP = 0.02848043 RMSEP = 0.03473952   MAEP= 0.021976   MAPEP= 0.2266264
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 50, neighbors = 9)
+# RMSLEP = 0.02855454 RMSEP = 0.034921   MAEP= 0.02209456   MAPEP= 0.2184926
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 55, neighbors = 9)
+# RMSLEP = 0.02790271 RMSEP = 0.03400922   MAEP= 0.02181917   MAPEP= 0.2154055
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 60, neighbors = 9)
+# RMSLEP = 0.02833183 RMSEP = 0.03463292   MAEP= 0.02193248   MAPEP= 0.2111712
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 65, neighbors = 9)
+# RMSLEP = 0.02879634 RMSEP = 0.03522894   MAEP= 0.02180916   MAPEP= 0.2033285
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 70, neighbors = 9)
+# RMSLEP = 0.02880328 RMSEP = 0.03512528   MAEP= 0.02213365   MAPEP= 0.2345095
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 75, neighbors = 9)
+# RMSLEP = 0.02778491 RMSEP = 0.03381687   MAEP= 0.0215106   MAPEP= 0.2213219
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 80, neighbors = 9)
+# RMSLEP = 0.02846212 RMSEP = 0.03467116   MAEP= 0.02176291   MAPEP= 0.2295154
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 85, neighbors = 9)
+# RMSLEP = 0.02895798 RMSEP = 0.03540791   MAEP= 0.02195497   MAPEP= 0.2213394
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 90, neighbors = 9)
+# RMSLEP = 0.02873599 RMSEP = 0.03510079   MAEP= 0.02202193   MAPEP= 0.2078274
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 95, neighbors = 9)
+# RMSLEP = 0.02885052 RMSEP = 0.03518716   MAEP= 0.02212498   MAPEP= 0.2482671
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x,form_test_y, p = 0.667, B = 20, committees = 100, neighbors = 9)
+# RMSLEP = 0.02803035 RMSEP = 0.03412854   MAEP= 0.02171941   MAPEP= 0.2296888
+# 
+
+```
+
+A boosting value of 35 narrowly produces the best value, leaving us with our final Treed model for Formation energy
+
+```{r}
+cubist_form_final = cubist(form_test_x,form_test_y, p = 0.667, B = 20, committees = 35, neighbors = 9)
+
+#summary(cubist_form_final)
+```
+
+Evaluation on training data (1567 cases):
+
+    Average  |error|          0.0232752
+    Relative |error|               0.32
+    Correlation coefficient        0.90
+
+
+	Attribute usage:
+	  Conds  Model
+
+	   70%    91%    percent_atom_in
+	   57%    89%    lattice_vector_3_ang
+	   45%    84%    lattice_vector_2_ang
+	   39%    87%    percent_atom_al
+	   36%    39%    spacegroup
+	   11%    59%    lattice_vector_1_ang
+	    9%    65%    percent_atom_ga
+	    5%           lattice_angle_alpha_degree
+	    4%    60%    lattice_angle_gamma_degree
+	    2%           lattice_angle_beta_degree
+	          13%    number_of_total_atoms
+	          11%    atoms_40
+	           2%    atoms_30
+	           
+RMSLEP = 0.02717477 RMSEP = 0.0330505   MAEP= 0.02148992   MAPEP= 0.2043025
+
+R^2 = 0.81
+	           
+While our improvement over the base model were small, the reduction in error still is something to be considered and does still make it worth it to consider playing around with boosting and nearest neighbors.      
+	     
+Now we will try bandgap as a response.
+
+```{r}
+form_test_x2 = cond_train3_band[,-24]
+
+form_test_y2 = cond_train3_band[,24]
+
+cond_cub2 = cubist(x = form_test_x2, y = form_test_y2, committees = 1)
+
+summary(cond_cub2)
+```
+Evaluation on training data (1567 cases):
+
+    Average  |error|          0.0605275
+    Relative |error|               0.22
+    Correlation coefficient        0.94
+
+
+	Attribute usage:
+	  Conds  Model
+
+	   92%    95%    lattice_vector_3_ang
+	   89%    80%    percent_atom_in
+	   81%    82%    percent_atom_al
+	   63%    65%    spacegroup
+	   37%    42%    lattice_vector_1_ang
+	   13%    16%    lattice_angle_gamma_degree
+	   10%    57%    percent_atom_ga
+	    4%    89%    lattice_vector_2_ang
+	          11%    atoms_40
+
+While an impressive start, having low error scores and a coefficent of 0.94, it still may prove useful to optimize the paramters to maximize our yields and reduce overfitting.
+
+```{r}
+
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 1, neighbors = 0)
+# RMSLEP = 0.06537628 RMSEP = 0.1152551   MAEP= 0.06144679   MAPEP= 2.249768
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 1, neighbors = 1)
+# RMSLEP = 0.07195803 RMSEP = 0.1242237   MAEP= 0.06637847   MAPEP= 0.755666
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 1, neighbors = 2)
+# RMSLEP = 0.06775683 RMSEP = 0.1185319   MAEP= 0.06252493   MAPEP= 2.151726
+# > 
+# >  
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 1, neighbors = 3)
+# RMSLEP = 0.06736106 RMSEP = 0.1188582   MAEP= 0.06178664   MAPEP= 1.14858
+# > 
+# >  
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 1, neighbors = 4)
+# RMSLEP = 0.06934879 RMSEP = 0.1224337   MAEP= 0.06336363   MAPEP= 2.084187
+# > 
+# >  
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 1, neighbors = 5)
+# RMSLEP = 0.06341158 RMSEP = 0.1137942   MAEP= 0.05969285   MAPEP= 2.539457
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 1, neighbors = 6)
+# RMSLEP = 0.06681612 RMSEP = 0.1179883   MAEP= 0.06238921   MAPEP= 1.382312
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 1, neighbors = 7)
+# RMSLEP = 0.06543542 RMSEP = 0.1143767   MAEP= 0.06111267   MAPEP= 1.301673
+# > 
+# > 
+# >  
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 1, neighbors = 8)
+# RMSLEP = 0.06572626 RMSEP = 0.1153895   MAEP= 0.06001655   MAPEP= 1.629123
+# 
+# 
+# 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 1, neighbors = 9)
+# RMSLEP = 0.06377824 RMSEP = 0.1139196   MAEP= 0.06060954   MAPEP= 2.925799
+```
+
+The optimal value for neighbors is 5. Now onto boosting.
+
+
+```{r}
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 1, neighbors = 5)
+# RMSLEP = 0.06568027 RMSEP = 0.1131044   MAEP= 0.06050445   MAPEP= 2.551471
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 5, neighbors = 5)
+# RMSLEP = 0.05646231 RMSEP = 0.09855742   MAEP= 0.05619269   MAPEP= 2.47747
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 10, neighbors = 5)
+# RMSLEP = 0.0557989 RMSEP = 0.09769368   MAEP= 0.05582741   MAPEP= 1.76166
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 15, neighbors = 5)
+# RMSLEP = 0.05732295 RMSEP = 0.09926732   MAEP= 0.05657491   MAPEP= 1.373725
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 20, neighbors = 5)
+# RMSLEP = 0.0581008 RMSEP = 0.1000819   MAEP= 0.05658944   MAPEP= 2.448342
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 25, neighbors = 5)
+# RMSLEP = 0.05757621 RMSEP = 0.1004281   MAEP= 0.05637488   MAPEP= 2.383588
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 30, neighbors = 5)
+# RMSLEP = 0.05798935 RMSEP = 0.1000757   MAEP= 0.05589889   MAPEP= 2.954169
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 35, neighbors = 5)
+# RMSLEP = 0.05785085 RMSEP = 0.1006174   MAEP= 0.05638628   MAPEP= 1.453625
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 40, neighbors = 5)
+# RMSLEP = 0.05616211 RMSEP = 0.09804356   MAEP= 0.05557444   MAPEP= 1.534716
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 45, neighbors = 5)
+# RMSLEP = 0.05548687 RMSEP = 0.09659392   MAEP= 0.05467256   MAPEP= 2.219598
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 50, neighbors = 5)
+# RMSLEP = 0.05736875 RMSEP = 0.0986013   MAEP= 0.05579035   MAPEP= 2.864756
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 55, neighbors = 5)
+# RMSLEP = 0.05785987 RMSEP = 0.1010301   MAEP= 0.05638847   MAPEP= 2.534446
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 60, neighbors = 5)
+# RMSLEP = 0.05546727 RMSEP = 0.09642195   MAEP= 0.05523967   MAPEP= 2.568528
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 65, neighbors = 5)
+# RMSLEP = 0.05788636 RMSEP = 0.1001062   MAEP= 0.05632725   MAPEP= 1.455314
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 70, neighbors = 5)
+# RMSLEP = 0.05740603 RMSEP = 0.1005015   MAEP= 0.05679506   MAPEP= 2.144069
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 75, neighbors = 5)
+# RMSLEP = 0.0563129 RMSEP = 0.09802249   MAEP= 0.05560001   MAPEP= 1.443422
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 80, neighbors = 5)
+# RMSLEP = 0.05729028 RMSEP = 0.09899598   MAEP= 0.05590552   MAPEP= 2.46016
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 85, neighbors = 5)
+# RMSLEP = 0.05538537 RMSEP = 0.09533345   MAEP= 0.05419751   MAPEP= 1.591038
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 90, neighbors = 5)
+# RMSLEP = 0.05892291 RMSEP = 0.1018736   MAEP= 0.05710835   MAPEP= 2.26647
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 95, neighbors = 5)
+# RMSLEP = 0.05499022 RMSEP = 0.09668556   MAEP= 0.05557619   MAPEP= 2.159504
+# > 
+# > 
+# > 
+# > cubist.cv(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 100, neighbors = 5)
+# RMSLEP = 0.05631326 RMSEP = 0.09833671   MAEP= 0.0559818   MAPEP= 2.106057
+
+```
+
+The best model form bandgap energy uses 85 boosts according to our work above, meaning our best model via treed is shown below.
+
+```{r}
+cubist_band_final = cubist(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 85, neighbors = 5)
+
+summary(cubist_band_final)
+```
+
+Evaluation on training data (1567 cases):
+
+    Average  |error|          0.0594649
+    Relative |error|               0.22
+    Correlation coefficient        0.94
+
+
+	Attribute usage:
+	  Conds  Model
+
+	   83%    91%    lattice_vector_3_ang
+	   74%    93%    percent_atom_in
+	   59%    82%    percent_atom_al
+	   28%    47%    spacegroup
+	    8%    67%    lattice_angle_gamma_degree
+	    7%           lattice_angle_alpha_degree
+	    6%    84%    lattice_vector_2_ang
+	    5%    66%    lattice_vector_1_ang
+	    4%    75%    percent_atom_ga
+	    2%           lattice_angle_beta_degree
+	          31%    number_of_total_atoms
+	          29%    Spacegroup_167
+	          23%    atoms_40
+	          11%    atoms_30
+	           3%    atoms_60
+
+RMSLEP = 0.05538537 RMSEP = 0.09533345   MAEP= 0.05419751   MAPEP= 1.591038
+
+R^2 = 0.8836
+
+Much like our model for formation energy, our direct metrics based such as error have only improved slightly, and our correlation coefficent did not change much. But these improvements still are measureable and therefore should be taken into account.
 
 
 
