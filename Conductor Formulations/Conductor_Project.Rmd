@@ -1196,6 +1196,23 @@ XG_form = xgboost(data = form_test_x_mat, label = form_test_y_list, nrounds = 25
 ```
 
 
+Looking at variable importance for top ten predictors:
+
+```{r}
+mat = xgb.importance(feature_names=colnames(form_test_x_mat),model=XG_form)
+xgb.plot.importance(importance_matrix=mat[1:10])
+
+```
+
+For all predictors:
+
+```{r}
+mat = xgb.importance(feature_names=colnames(form_test_x_mat),model=XG_form)
+xgb.plot.importance(importance_matrix=mat[1:10])
+```
+
+
+
 Next, we will work similarly on bandgap.
 
 ```{r}
@@ -1278,10 +1295,30 @@ Precitions for Bandgap using XGboost
 
 ```{r}
 cond_test_ready %>%
-  select (-c(bandgap_energy_ev_log_y_plus_1,formation_energy_ev_natom_log_y_plus_1)) -> Modified_Xs
+  select (-c(bandgap_energy_ev_log_y_plus_1,formation_energy_ev_natom_log_y_plus_1,ID)) -> Modified_Xs
 
-Bandgap_Predictions = predict(XG_band, cond_test_ready_band)
+Bandgap_Predictions = predict(XG_band, as.matrix(Modified_Xs))
+
+write.csv(Bandgap_Predictions, file = "bandgap_predictions_XGboost.csv")
 ```
+
+Variable importance for final model for bandgap energy using top 10 predictors.
+
+
+```{r}
+mat = xgb.importance(feature_names=colnames(form_test_x2_mat),model=XG_band)
+xgb.plot.importance(importance_matrix=mat[1:10])
+
+```
+
+Looking at all predictors
+
+```{r}
+mat = xgb.importance(feature_names=colnames(form_test_x2_mat),model=XG_band)
+xgb.plot.importance(importance_matrix=mat[1:26])
+```
+
+
 
 
 
