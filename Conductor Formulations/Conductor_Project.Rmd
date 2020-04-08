@@ -892,7 +892,7 @@ form_test_y2 = cond_train3_band[,24]
 
 cond_cub2 = cubist(x = form_test_x2, y = form_test_y2, committees = 1)
 
-summary(cond_cub2)
+#summary(cond_cub2)
 ```
 Evaluation on training data (1567 cases):
 
@@ -1081,7 +1081,7 @@ The best model form bandgap energy uses 85 boosts according to our work above, m
 ```{r}
 cubist_band_final = cubist(form_test_x2,form_test_y2, p = 0.667, B = 20, committees = 85, neighbors = 5)
 
-summary(cubist_band_final)
+#summary(cubist_band_final)
 ```
 
 Evaluation on training data (1567 cases):
@@ -1117,6 +1117,206 @@ R^2 = 0.8836
 Much like our model for formation energy, our direct metrics based such as error have only improved slightly, and our correlation coefficent did not change much. But these improvements still are measureable and therefore should be taken into account.
 
 
+Another tree-based method tried was XGboost, as we thought that it was possible that the regression based approch of the treed model could potentially be holding it back given the difficult nature of our predictors.
+
+Like before, we will start with Form garp as our response.
+
+```{r}
+
+require(xgboost)
+
+
+form_test_y_list = as.list(form_test_y)
+
+form_test_x_mat = as.matrix(form_test_x)
+
+basic_boost_form = xgboost(data = form_test_x_mat, label = form_test_y_list, nrounds = 30, nthread = 4, verbose = T, objective = "reg:linear", eta = 0.9, max.depth = 6 )
+
+
+
+```
+
+While these intial results look good with just basic parameters, we still need to try and optimize the model by changing them. We will us K-folds cross-validation to get those results.
+
+```{r}
+# params = list(booster="gbtree",objective="reg:squaredlogerror",eta=0.9,gamma=0,
+# max_depth=5,min_child_weight=80,subsample=.66,colsample_bytree=1,
+# lambda=0.80,alpha=0.55)
+# 
+# 
+# from_xg_cv_results = xgb.cv(params = params, data = form_test_x_mat, nrounds = 500, print_every_n = 10, nthreads = 4, nfold = 20, stratified = F, early_stopping_rounds = 30, maximize = 0, label = form_test_y_list) 
+```
+
+[1]	train-rmsle:0.145127+0.002620	test-rmsle:0.144935+0.009187 
+Multiple eval metrics are present. Will use test_rmsle for early stopping.
+Will train until test_rmsle hasn't improved in 30 rounds.
+
+[11]	train-rmsle:0.033935+0.000620	test-rmsle:0.035315+0.004063 
+[21]	train-rmsle:0.030586+0.000534	test-rmsle:0.032836+0.004206 
+[31]	train-rmsle:0.029062+0.000438	test-rmsle:0.031696+0.004325 
+[41]	train-rmsle:0.028140+0.000436	test-rmsle:0.030978+0.004436 
+[51]	train-rmsle:0.027481+0.000403	test-rmsle:0.030678+0.004610 
+[61]	train-rmsle:0.027002+0.000363	test-rmsle:0.030468+0.004622 
+[71]	train-rmsle:0.026560+0.000380	test-rmsle:0.030222+0.004620 
+[81]	train-rmsle:0.026210+0.000363	test-rmsle:0.030137+0.004666 
+[91]	train-rmsle:0.025918+0.000362	test-rmsle:0.029991+0.004657 
+[101]	train-rmsle:0.025651+0.000355	test-rmsle:0.029905+0.004694 
+[111]	train-rmsle:0.025428+0.000356	test-rmsle:0.029781+0.004759 
+[121]	train-rmsle:0.025224+0.000343	test-rmsle:0.029680+0.004743 
+[131]	train-rmsle:0.025017+0.000350	test-rmsle:0.029600+0.004719 
+[141]	train-rmsle:0.024851+0.000344	test-rmsle:0.029529+0.004716 
+[151]	train-rmsle:0.024693+0.000349	test-rmsle:0.029572+0.004690 
+[161]	train-rmsle:0.024544+0.000351	test-rmsle:0.029538+0.004799 
+[171]	train-rmsle:0.024389+0.000348	test-rmsle:0.029471+0.004873 
+[181]	train-rmsle:0.024262+0.000356	test-rmsle:0.029406+0.004858 
+[191]	train-rmsle:0.024139+0.000345	test-rmsle:0.029332+0.004830 
+[201]	train-rmsle:0.024022+0.000341	test-rmsle:0.029341+0.004875 
+[211]	train-rmsle:0.023910+0.000328	test-rmsle:0.029309+0.004926 
+[221]	train-rmsle:0.023802+0.000323	test-rmsle:0.029305+0.004913 
+[231]	train-rmsle:0.023687+0.000335	test-rmsle:0.029237+0.004862 
+[241]	train-rmsle:0.023578+0.000320	test-rmsle:0.029244+0.004969 
+[251]	train-rmsle:0.023477+0.000306	test-rmsle:0.029220+0.004972 
+[261]	train-rmsle:0.023398+0.000303	test-rmsle:0.029251+0.004904 
+[271]	train-rmsle:0.023301+0.000306	test-rmsle:0.029276+0.004927 
+Stopping. Best iteration:
+[246]	train-rmsle:0.023528+0.000314	test-rmsle:0.029176+0.004953
+
+
+After attempting to modify parameters to beat the Treed regression model, the closest that could be gotten conistantly was the one above with 256 rounds for and RMSLE of 0.029176.
+
+Other Metrics:
+
+RMSE: 0.036691
+
+MAE: 0.024237
+
+Final Model:
+```{r include=FALSE}
+XG_form = xgboost(data = form_test_x_mat, label = form_test_y_list, nrounds = 256, nthread = 4, verbose = T, objective = "reg:squaredlogerror", eta = 0.9, max.depth = 5, lambda = 0.8, alpha = 0.55, stratified = F, gamma = 0, colsample_bytree=1, maximize = 0, min_child_weight=80)
+```
+
+
+Looking at variable importance for top ten predictors:
+
+```{r}
+mat = xgb.importance(feature_names=colnames(form_test_x_mat),model=XG_form)
+xgb.plot.importance(importance_matrix=mat[1:10])
+
+```
+
+For all predictors:
+
+```{r}
+mat = xgb.importance(feature_names=colnames(form_test_x_mat),model=XG_form)
+xgb.plot.importance(importance_matrix=mat[1:10])
+```
+
+
+
+Next, we will work similarly on bandgap.
+
+```{r}
+
+
+
+form_test_y2_list = as.list(form_test_y2)
+
+form_test_x2_mat = as.matrix(form_test_x2)
+
+basic_boost_form = xgboost(data = form_test_x_mat, label = form_test_y_list, nrounds = 30, nthread = 4, verbose = T, objective = "reg:linear", eta = 0.9, max.depth = 6 )
+
+
+```
+
+While even better then our initial run through from before, we still will go through the same process.
+
+```{r}
+
+# 
+# params = list(booster="gbtree",objective="reg:squaredlogerror",eta=0.4,gamma=0,
+# max_depth=1,min_child_weight=15,subsample=.66,colsample_bytree=0.75,
+# lambda=0.5,alpha=0)
+# 
+# 
+# from_xg_cv_results2 = xgb.cv(params = params, data = form_test_x2_mat, nrounds = 500, print_every_n = 10, nthreads = 7, nfold = 20, stratified = F, early_stopping_rounds = 30, maximize = 0, label = form_test_y2_list)
+
+```
+
+
+[1]	train-rmsle:0.267417+0.000682	test-rmsle:0.267147+0.012896 
+Multiple eval metrics are present. Will use test_rmsle for early stopping.
+Will train until test_rmsle hasn't improved in 30 rounds.
+
+[11]	train-rmsle:0.075467+0.000847	test-rmsle:0.075456+0.012180 
+[21]	train-rmsle:0.061307+0.000904	test-rmsle:0.061674+0.011922 
+[31]	train-rmsle:0.057481+0.001031	test-rmsle:0.058701+0.011041 
+[41]	train-rmsle:0.055696+0.000976	test-rmsle:0.057283+0.011041 
+[51]	train-rmsle:0.054432+0.000859	test-rmsle:0.056481+0.011143 
+[61]	train-rmsle:0.053474+0.000824	test-rmsle:0.055702+0.011280 
+[71]	train-rmsle:0.052698+0.000756	test-rmsle:0.055063+0.011169 
+[81]	train-rmsle:0.052084+0.000742	test-rmsle:0.054496+0.011229 
+[91]	train-rmsle:0.051502+0.000704	test-rmsle:0.054383+0.011125 
+[101]	train-rmsle:0.051016+0.000681	test-rmsle:0.054262+0.011255 
+[111]	train-rmsle:0.050615+0.000703	test-rmsle:0.054092+0.011103 
+[121]	train-rmsle:0.050237+0.000691	test-rmsle:0.053993+0.011396 
+[131]	train-rmsle:0.049917+0.000685	test-rmsle:0.053875+0.011476 
+[141]	train-rmsle:0.049621+0.000691	test-rmsle:0.053708+0.011328 
+[151]	train-rmsle:0.049317+0.000675	test-rmsle:0.053769+0.011501 
+[161]	train-rmsle:0.049029+0.000642	test-rmsle:0.053776+0.011665 
+[171]	train-rmsle:0.048782+0.000629	test-rmsle:0.053591+0.011670 
+[181]	train-rmsle:0.048542+0.000614	test-rmsle:0.053580+0.011512 
+[191]	train-rmsle:0.048309+0.000612	test-rmsle:0.053621+0.011569 
+[201]	train-rmsle:0.048122+0.000604	test-rmsle:0.053479+0.011579 
+[211]	train-rmsle:0.047936+0.000596	test-rmsle:0.053238+0.011461 
+[221]	train-rmsle:0.047741+0.000586	test-rmsle:0.053430+0.011315 
+[231]	train-rmsle:0.047560+0.000564	test-rmsle:0.053464+0.011292 
+Stopping. Best iteration:
+[210]	train-rmsle:0.047958+0.000605	test-rmsle:0.053097+0.011444
+
+
+After many iterative cycles of modifciation, the above model won out in cross-validation having gone 210 rounds for and RMSLE of 0.053097.
+
+Other Metrics:
+
+RMSE: 0.04795765
+
+MAE: 0.062172
+
+Final Model:
+
+
+```{r include=FALSE}
+XG_band = xgboost(data = form_test_x2_mat, label = form_test_y2_list, nrounds = 210, nthread = 7, verbose = T, objective = "reg:squaredlogerror", eta = 0.4, max.depth = 1, lambda = 0.5, alpha = 0, stratified = F, gamma = 0, colsample_bytree=1, maximize = 0, min_child_weight=15)
+```
+
+
+
+Precitions for Bandgap using XGboost
+
+```{r}
+cond_test_ready %>%
+  select (-c(bandgap_energy_ev_log_y_plus_1,formation_energy_ev_natom_log_y_plus_1,ID)) -> Modified_Xs
+
+Bandgap_Predictions = predict(XG_band, as.matrix(Modified_Xs))
+
+write.csv(Bandgap_Predictions, file = "bandgap_predictions_XGboost.csv")
+```
+
+Variable importance for final model for bandgap energy using top 10 predictors.
+
+
+```{r}
+mat = xgb.importance(feature_names=colnames(form_test_x2_mat),model=XG_band)
+xgb.plot.importance(importance_matrix=mat[1:10])
+
+```
+
+Looking at all predictors
+
+```{r}
+mat = xgb.importance(feature_names=colnames(form_test_x2_mat),model=XG_band)
+xgb.plot.importance(importance_matrix=mat[1:26])
+```
 
 
 
