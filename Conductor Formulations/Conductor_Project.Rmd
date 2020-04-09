@@ -15,7 +15,7 @@ load("C:/Users/qs5834mm/Desktop/DSCI 425/R/Regression.Rdata")
 
 cond_com =  read.csv("Conductors (combined).csv")
 cond_train = read.csv("Conductors (train).csv")
-cond_teat = read.csv("Conductors (test).csv")
+cond_test = read.csv("Conductors (test).csv")
 
 require(dplyr)
 require(ggplot2)
@@ -368,6 +368,134 @@ write.csv(cond_test_ready, "cond_test_new_variables.csv", row.names = FALSE)
 
 ```
 
+# Exploring structure within predictors with PCA
+
+Load data and prep:
+```{r}
+###### Load and prepare data ######
+#Load data:
+{#setwd("~/OneDrive - MNSCU/myGithub/Supervised_Learning/Multiple_Linear_Regression/MachineLearning-SupervisedLearning/Conductor Formulations")
+  #Train set
+  cond_train = read.csv("Conductors (train).csv")
+  #Test set
+  cond_test = read.csv("Conductors (test).csv")
+  
+  ### New training sets
+  cond_train_new_vars = read.csv("cond_train_new_variables.csv")
+  #No_box_cox
+  #angles measures are still in degrees; no transformaitons on predictors
+  cond_train_new_vars_no_box_cox = read.csv("cond_train_new_variables_no_box_cox.csv")
+  
+  ####### New Variables #######
+  
+  #Resposne vectors 
+  y_train_form_eng_trans = cond_train_new_vars$formation_energy_ev_natom_log_y_plus_1
+  y_train_bandgap_eng_trans = cond_train_new_vars$bandgap_energy_ev_log_y_plus_1
+  
+  #Resposne vectors for no box_cox
+  #y_train_form_eng_trans = cond_train_new_vars_no_box_cox$formation_energy_ev_natom_log_y_plus_1
+  #y_train_bandgap_eng_trans = cond_train_new_vars_no_box_cox$bandgap_energy_ev_log_y_plus_1
+  
+  #Df of all x's
+  x_train = cond_train_new_vars[,-c(1,25,26)]
+  #x_train =cond_train_new_vars_no_box_cox[,-c(1,2,26,27)]
+}
+#Rearrange the data for two models: Model 1: formation energy as response; Model 2: bandgap energy as response
+{#detach("package:Ecfun", unload = TRUE)
+  cond_train_new_vars %>%
+    select(25,2:24,27:29) -> train_model1
+  
+  cond_train_new_vars%>%
+    select(26, 2:24,27:29) -> train_model2
+} 
+#Rearrange the data for two models for no box_cox
+{
+  #detach("package:Ecfun", unload = TRUE)
+  cond_train_new_vars_no_box_cox %>%
+    select(26,3:25,28:30) -> train_model1_no_box_cox
+  
+  cond_train_new_vars_no_box_cox%>%
+    select(27, 3:25,28:30) -> train_model2_no_box_cox
+} 
+```
+
+We are going to be working with 'x_train' data frame. It only includes our final (added and transformed) independent variables.
+```{r}
+x_train.mat = as.matrix(x_train)
+```
+
+Let's first explore the correlation of our predictors by building a correlation plot:
+
+```{r fig.height=7, fig.width=7}
+{corr.x_train = cor(x_train.mat)
+#jpeg("corr.plot_predictors.png", width = 500, height = 500)
+corrplot(corr.x_train, order = 'hclust')
+#dev.off()
+}
+```
+
+Now, we are going to conduct principal component analysis using FactorMineR and factoextra libraries:
+
+```{r echo=TRUE, include=FALSE}
+require(factoextra)
+require(FactoMineR)
+####PCA - using factoMiner
+x_train.scale = scale(x_train.mat)
+
+cond.PCA = PCA(x_train.scale, quanti.sup = c(24,25,26))
+```
+
+```{r}
+summary(cond.PCA)
+```
+
+Below, we see the significant variables contribution to the 1st and 2nd dimensions:
+
+```{r}
+#Significant correlation of variables to the first 2 dimensions
+dimdesc(cond.PCA, axes=c(1,2))
+```
+
+
+```{r}
+#Selecting only 8 features whose quality of representaiton was the highest:
+fviz_pca_var(cond.PCA, repel = T, select.var = list(cos2 = 10), col.var = "cos2")
+```
+
+```{r fig.height=5, fig.width=10, warning=FALSE}
+fviz_pca_biplot(cond.PCA, repel = F,
+                #Variables
+                select.var = list(contrib=10),
+                #alpha.var = "contrib", 
+                col.var = "cos2",
+                #gradient.cols = "RdYlBu",
+                #Individuals
+                select.ind = list(contrib = 1000),
+                geom.ind = "point",
+                #fill.ind = cond_train_new_vars$spacegroup, col.ind = "black",
+                pointshape = 21, pointsize = 2,
+                palette = "jco",
+                addEllipses = TRUE,
+                #col.var = "contrib", 
+                legend.title = list(fill = "spacegroup", color = "Quality of Representation",
+                                    alpha = "Cos2"),
+                cex=.7, 
+                ggtheme = theme_minimal())
+```
+
+
+```{r}
+#Scree plot
+{fviz_screeplot(cond.PCA, addlabels = TRUE, ylim = c(0, 45))
+}
+
+```
+
+
+# Model Building
+
+## MARS
+
 To start off, we will attempt a Mars Model using our new variables for just formation energy.
 
 
@@ -546,6 +674,7 @@ band.evimp <- evimp(band.mars)
 plot(band.evimp, cex.var = 0.6)
 
 ```
+
 Final Metrics
 ```{r}
 
@@ -621,6 +750,8 @@ MARS.cv(response = cond_train3_form$formation_energy_ev_natom_log_y_plus_1, data
 
 
 While the Mars results look promising, certain variables were not fully uilized, particularly are categorical ones. Treed regression may benfit more from this, and also may pick on more direct patterns the Mars model missed, so it was tried as well.
+
+## Treed Regression
 
 ```{r}
 require(rpart)
@@ -1116,7 +1247,7 @@ R^2 = 0.8836
 
 Much like our model for formation energy, our direct metrics based such as error have only improved slightly, and our correlation coefficent did not change much. But these improvements still are measureable and therefore should be taken into account.
 
-
+## XGboost
 Another tree-based method tried was XGboost, as we thought that it was possible that the regression based approch of the treed model could potentially be holding it back given the difficult nature of our predictors.
 
 Like before, we will start with Form garp as our response.
@@ -1291,6 +1422,7 @@ XG_band = xgboost(data = form_test_x2_mat, label = form_test_y2_list, nrounds = 
 
 
 
+### Predicting on Test Set
 Precitions for Bandgap using XGboost
 
 ```{r}
@@ -1319,6 +1451,1088 @@ xgb.plot.importance(importance_matrix=mat[1:26])
 ```
 
 
+##Shrinkage methods: ridge, lasso, Elastic Net
+
+```{r include=FALSE}
+######### Libraries ######
+{
+  library(tidyr)
+  library(dplyr)
+  library(ggplot2)
+  library(nnet)
+  #library(Ecfun)
+  library(car)
+  library(ISLR)
+  #library(MASS)
+  library(glmnet)
+  library(pls)
+  library(corrplot)
+  require(stringr)
+  library(gridExtra)
+  library(ipred)
+  library(randomForest)
+}
+```
+
+```{r echo=TRUE}
+###### Monte Carlo Cross-Validation of Elastic Net, Ridge and Lasso Regression ####
+{glmnet.ssmc = function(X,y,p=.667,M=100,alpha=1,lambda=1) {
+  RMSEP = rep(0,M)
+  RMSLEP = rep(0,M)
+  MAEP = rep(0,M)
+  MAPEP = rep(0,M)
+  n = nrow(X)
+  for (i in 1:M) {
+    ss = floor(n*p)
+    sam = sample(1:n,ss,replace=F)
+    fit = glmnet(X[sam,],y[sam],lambda=lambda,alpha=alpha)
+    ypred = predict(fit,newx=X[-sam,])
+    RMSEP[i] = sqrt(mean((y[-sam]-ypred)^2))
+    RMSLEP[i] = sqrt(mean((log(ypred +1) - log(y[-sam] +1))^2)) 
+    MAEP[i] = mean(abs(y[-sam]-ypred))
+    yp = ypred[y[-sam]!=0]
+    ya = y[-sam][y[-sam]!=0]
+    MAPEP[i]=mean(abs(yp-ya)/ya)
+  }
+  cat("RMSEP=",mean(RMSEP),
+      "RMSLEP=",mean(RMSLEP),
+      "MAEP=",mean(MAEP),
+      "MAPEP=",mean(MAPEP))
+  cv = return(data.frame(RMSEP=RMSEP, RMSLEP = RMSLEP, MAEP=MAEP,MAPEP=MAPEP)) 
+}
+}
+```
+
+```{r}
+###### Load and prepare data ######
+#Load data:
+{#setwd("~/OneDrive - MNSCU/myGithub/Supervised_Learning/Multiple_Linear_Regression/MachineLearning-SupervisedLearning/Conductor Formulations")
+  #Train set
+  cond_train = read.csv("Conductors (train).csv")
+  #Test set
+  cond_test = read.csv("Conductors (test).csv")
+  cond_test_final = read.csv("cond_test_new_variables.csv")
+  ### New training sets
+  cond_train_new_vars = read.csv("cond_train_new_variables.csv")
+  #No_box_cox
+  #angles measures are still in degrees; no transformaitons on predictors
+  cond_train_new_vars_no_box_cox = read.csv("cond_train_new_variables_no_box_cox.csv")
+  
+  ####### New Variables #######
+  
+  #Resposne vectors 
+  y_train_form_eng_trans = cond_train_new_vars$formation_energy_ev_natom_log_y_plus_1
+  y_train_bandgap_eng_trans = cond_train_new_vars$bandgap_energy_ev_log_y_plus_1
+  
+  #Resposne vectors for no box_cox
+  #y_train_form_eng_trans = cond_train_new_vars_no_box_cox$formation_energy_ev_natom_log_y_plus_1
+  #y_train_bandgap_eng_trans = cond_train_new_vars_no_box_cox$bandgap_energy_ev_log_y_plus_1
+  
+  #Df of all x's
+  x_train = cond_train_new_vars[,-c(1,25,26)]
+  #x_train =cond_train_new_vars_no_box_cox[,-c(1,2,26,27)]
+}
+#Rearrange the data for two models: Model 1: formation energy as response; Model 2: bandgap energy as response
+{#detach("package:Ecfun", unload = TRUE)
+  cond_train_new_vars %>%
+    select(25,2:24,27:29) -> train_model1
+  
+  cond_train_new_vars%>%
+    select(26, 2:24,27:29) -> train_model2
+} 
+#Rearrange the data for two models for no box_cox
+{
+  #detach("package:Ecfun", unload = TRUE)
+  cond_train_new_vars_no_box_cox %>%
+    select(26,3:25,28:30) -> train_model1_no_box_cox
+  
+  cond_train_new_vars_no_box_cox%>%
+    select(27, 3:25,28:30) -> train_model2_no_box_cox
+} 
+```
+
+### Model 1: response is formation energy
+```{r}
+######## Model 1:response is formation energy ########
+####### Set up #########
+{
+  X = scale(model.matrix(formation_energy_ev_natom_log_y_plus_1~., data = train_model1)[,-1])
+  y = train_model1$formation_energy_ev_natom_log_y_plus_1
+}
+```
+
+Below we go through the process of finding the optimal alpha value for Elastic Net:
+
+```{r include=FALSE}
+###### For Elastic Net: finding lambda and fitting the model ########
+#Find best lambda
+{ 
+  # par(mfrow=c(4,4))
+  # #Change alpha
+  # alpha = 0.8
+  # cv.en = cv.glmnet(X,y,alpha=alpha)
+  # bestlam.en = cv.en$lambda.min
+  #plot(cv.en)
+  #title(main = paste("Best log(lambda) for Elastic Net", (round(log(bestlam.en),digits = 2))), sub = paste("Best lambda:", round(bestlam.en,5)))
+}
+#Fit with optimal lambda
+{
+  # en.mod = glmnet(X,y,alpha=alpha, lambda =bestlam.en)
+  
+  #y and yhat correlation
+  # en.cor = cor(y, predict(en.mod, newx = X))
+  
+  #y and yhat correlation^2 = R^2
+  # en.rsqaured = cor(y, predict(en.mod, newx = X))^2
+  # plot(y,predict(en.mod,newx=X),xlab="Actual Age (y-values)",ylab="Predicted Age (yhat-values)", main = paste("Elastic Net Model:", "   ", "Correlation:", round(en.cor,4), "   ", "R^2:", round(en.rsqaured,4)),
+  #      sub = paste("alpha:", " ", alpha))
+}
+
+```
+
+Now, we are going to fit Elastic Net models with alphas of 0.95, 0.5, 0.05.
+
+```{r}
+###### Elastic net #########
+{alpha1 = 0.95
+cv.en = cv.glmnet(X,y,alpha=alpha1)
+bestlam.en = cv.en$lambda.min
+
+alpha2 = 0.5
+cv.en = cv.glmnet(X,y,alpha=alpha2)
+bestlam.en = cv.en$lambda.min
+
+alpha3 = 0.05
+cv.en = cv.glmnet(X,y,alpha=alpha3)
+bestlam.en = cv.en$lambda.min
+#plot(cv.en)
+#title(main = paste("Best log(lambda) for Elastic Net", (round(log(bestlam.en),digits = 2))), sub = paste("Best lambda:", round(bestlam.en,5)))
+en.results = glmnet.ssmc(X,y,p=.75, M=1000,alpha=alpha1,lambda=bestlam.en)
+en.results2 = glmnet.ssmc(X,y,p=.75, M=1000,alpha=alpha2,lambda=bestlam.en)
+en.results3 = glmnet.ssmc(X,y,p=.75, M=1000,alpha=alpha3,lambda=bestlam.en)
+}
+```
+
+Now, we are fitting ridge regression model:
+
+```{r}
+###### Ridge regression##########
+{cv.ridge= cv.glmnet(X, y, alpha = 0)
+bestlam.ridge = cv.ridge$lambda.min
+#plot(cv.ridge)
+#title(main = paste("Best log(lambda) for Ridge", (round(log(bestlam.ridge),digits = 2))), sub = paste("Best lambda:", round(bestlam.ridge)))
+ridge.results = glmnet.ssmc(X,y, p=.75, M=1000,alpha=0,lambda=bestlam.ridge)
+}
+```
+
+Lastly, we are fitting lasso regression model:
+```{r}
+###### Lasso regression##############
+{cv.lasso = cv.glmnet(X, y, alpha = 1)
+bestlam.lasso = cv.lasso$lambda.min
+#plot(cv.lasso)
+#title(main = paste("Best log(lambda) for Lasso", (round(log(bestlam.lasso),digits = 4))), sub = paste("Best lambda:", round(bestlam.lasso, 4)))
+lasso.results = glmnet.ssmc(X,y,p=.75, M=1000,alpha=1,lambda=bestlam.lasso)
+}
+```
+
+Now, let's compare the three different shrinkage methods we used:
+```{r}
+###### Compare the three methods ###########
+{names = c("Ridge", "Lasso", "Elastic Net, alpha = 0.95", "Elastic Net, alpha = 0.5", "Elastic Net, alpha = 0.0.005")
+metrics =cbind(((names)), rbind(
+  do.call(cbind, lapply(ridge.results,mean)), 
+  do.call(cbind, lapply(lasso.results, mean)),
+  do.call(cbind, lapply(en.results, mean)),
+  do.call(cbind, lapply(en.results2, mean)),
+  do.call(cbind, lapply(en.results3, mean))))
+
+df.metrics = as.data.frame(metrics)
+#write.csv(df.metrics, file = "Model_1_shrinkage_regression_results.csv", row.names = FALSE)
+df.metrics[order(df.metrics$RMSLEP),]
+}
+
+```
+
+The winner amongst the three shrinkage methods for Model 1 (reposne: formation energy) is Lasso (RMSLEP=0.0412)
+
+### Model 2: response is bandgap energy
+```{r}
+###### Model 2:response is bandgap energy ########
+###### Set up #########
+{
+X = scale(model.matrix(bandgap_energy_ev_log_y_plus_1~., data = train_model2)[,-1])
+y = train_model2$bandgap_energy_ev_log_y_plus_1
+}
+```
+
+Below we go through the process of finding the optimal alpha value for Elastic Net:
+```{r}
+###### For Elastic Net: finding lambda and fitting the model ########
+#Find best lambda
+{ 
+  # par(mfrow=c(4,4))
+  #Change alpha
+  # alpha = 0.8
+  # cv.en = cv.glmnet(X,y,alpha=alpha)
+  # bestlam.en = cv.en$lambda.min
+  #plot(cv.en)
+  #title(main = paste("Best log(lambda) for Elastic Net", (round(log(bestlam.en),digits = 2))), sub = paste("Best lambda:", round(bestlam.en,5)))
+  #en.results = glmnet.ssmc(X,y,p=.75, M=1000,alpha=0.1,lambda=bestlam.en)
+}
+#Fit with optimal lambda
+{
+  # en.mod = glmnet(X,y,alpha=alpha, lambda =bestlam.en)
+  # 
+  # #y and yhat correlation
+  # en.cor = cor(y, predict(en.mod, newx = X))
+  # 
+  # #y and yhat correlation^2 = R^2
+  # en.rsqaured = cor(y, predict(en.mod, newx = X))^2
+  # plot(y,predict(en.mod,newx=X),xlab="Actual Age (y-values)",ylab="Predicted Age (yhat-values)", main = paste("Elastic Net Model:", "   ", "Correlation:", round(en.cor,4), "   ", "R^2:", round(en.rsqaured,4)),
+  #      sub = paste("alpha:", " ", alpha))
+}
+```
+
+Now, we are going to fit Elastic Net models with alphas of 0.5, 0.4, 0.8.
+
+```{r}
+###### Elastic net #########
+{alpha1 = 0.8
+cv.en = cv.glmnet(X,y,alpha=alpha1)
+bestlam.en = cv.en$lambda.min
+
+alpha2 = 0.5
+cv.en = cv.glmnet(X,y,alpha=alpha2)
+bestlam.en = cv.en$lambda.min
+
+alpha3 = 0.4
+cv.en = cv.glmnet(X,y,alpha=alpha3)
+bestlam.en = cv.en$lambda.min
+#plot(cv.en)
+#title(main = paste("Best log(lambda) for Elastic Net", (round(log(bestlam.en),digits = 2))), sub = paste("Best lambda:", round(bestlam.en,5)))
+en.results = glmnet.ssmc(X,y,p=.75, M=1000,alpha=alpha1,lambda=bestlam.en)
+en.results2 = glmnet.ssmc(X,y,p=.75, M=1000,alpha=alpha2,lambda=bestlam.en)
+en.results3 = glmnet.ssmc(X,y,p=.75, M=1000,alpha=alpha3,lambda=bestlam.en)
+}
+```
+
+Now, we are fitting ridge regression model:
+
+```{r}
+###### Ridge regression##########
+{cv.ridge= cv.glmnet(X, y, alpha = 0)
+bestlam.ridge = cv.ridge$lambda.min
+#plot(cv.ridge)
+#title(main = paste("Best log(lambda) for Ridge", (round(log(bestlam.ridge),digits = 2))), sub = paste("Best lambda:", round(bestlam.ridge)))
+ridge.results = glmnet.ssmc(X,y, p=.75, M=1000,alpha=0,lambda=bestlam.ridge)
+}
+```
+
+Lastly, we are fitting lasso regression model:
+
+```{r}
+###### Lasso regression##############
+{cv.lasso = cv.glmnet(X, y, alpha = 1)
+bestlam.lasso = cv.lasso$lambda.min
+#plot(cv.lasso)
+#title(main = paste("Best log(lambda) for Lasso", (round(log(bestlam.lasso),digits = 4))), sub = paste("Best lambda:", round(bestlam.lasso, 4)))
+lasso.results = glmnet.ssmc(X,y,p=.75, M=1000,alpha=1,lambda=bestlam.lasso)
+}
+```
+
+Now, let's compare the three different shrinkage methods we used:
+
+```{r}
+###### Compare the three methods ###########
+{names = c("Ridge", "Lasso", "Elastic Net, alpha = 0.8", "Elastic Net, alpha = 0.5", "Elastic Net, alpha = 0.4")
+metrics =cbind(((names)), rbind(
+  do.call(cbind, lapply(ridge.results,mean)), 
+  do.call(cbind, lapply(lasso.results, mean)),
+  do.call(cbind, lapply(en.results, mean)),
+  do.call(cbind, lapply(en.results2, mean)),
+  do.call(cbind, lapply(en.results3, mean))))
+
+df.metrics = as.data.frame(metrics)
+#write.csv(df.metrics, file = "Model_2_shrinkage_regression_results.csv", row.names = FALSE)
+df.metrics[order(df.metrics$RMSLEP),]
+}
+
+```
+
+The winner amongst the three shrinkage methods for Model 2 (reposne: bandgap energy) is, as well, Lasso (RMSLEP=0.0571)
+
+The shrinkage methods did not perform better than MARS, Treed Regression or XGboosting for Model 1 (resposne=formation energy); for Model 2 (response=bandgap energy) Lasso and Elastic Net (alpha=0.5) did not do that bad. We will revist all the models' RMSLEP metrics at the end.
+
+We still must consider Random Forest.
+
+## Random Forest
+
+```{r include=FALSE}
+###### Libraries #####
+{
+  library(tidyr)
+  library(dplyr)
+  library(ggplot2)
+  library(nnet)
+  #library(Ecfun)
+  library(car)
+  library(ISLR)
+  #library(MASS)
+  library(glmnet)
+  library(pls)
+  library(corrplot)
+  require(stringr)
+  library(gridExtra)
+  library(ipred)
+  library(randomForest)
+}
+
+```
+
+```{r}
+###### Functions #####
+#detach("package:Ecfun", unload = TRUE)
+#rf.sscv Monte-Carlo CV function
+{rf.sscv = function(fit,data,p=.667,B=100,mtry=fit$mtry,ntree=fit$ntree) {
+  RMSEP = rep(0,B)
+  RMSLEP = rep(0,B)
+  MAEP = rep(0,B)
+  MAPEP = rep(0,B)
+  y = fit$y
+  n = nrow(data)
+  ss <- floor(n*p)
+  for (i in 1:B) {
+    sam = sample(1:n,ss,replace=F)
+    fit2 = randomForest(formula(fit),data=data[sam,],mtry=mtry,ntree=ntree)
+    ynew = predict(fit2,newdata=data[-sam,])
+    RMSEP[i] = sqrt(mean((y[-sam]-ynew)^2))
+    RMSLEP[i] = sqrt(mean((log(ynew +1) - log(y[-sam] +1))^2))
+    MAEP[i] = mean(abs(y[-sam]-ynew))
+    MAPEP[i] = mean((abs(y[-sam]-ynew)/y[-sam]))
+    
+  }
+  RMSEP = mean(RMSEP)
+  RMSLEP = mean(RMSLEP)
+  MAEP = mean(MAEP)
+  MAPEP = mean(MAPEP)
+  cat("RMSEP\n")
+  cat("===============\n")
+  cat(RMSEP,"\n\n")
+  cat("RMSLEP\n")
+  cat("===============\n")
+  cat(RMSLEP,"\n\n")
+  cat("MAEP\n")
+  cat("===============\n")
+  cat(MAEP,"\n\n")
+  cat("MAPEP\n")
+  cat("===============\n")
+  cat(MAPEP,"\n\n")
+  temp = data.frame(RMSEP=RMSEP, RMSLEP=RMSLEP, MAEP=MAEP,MAPEP=MAPEP)
+  return(temp)
+}
+
+}
+#Predict Accuracy function
+{PredAcc = function(y, ypred){
+  RMSEP = sqrt(mean((y-ypred)^2))
+  RMSLEP = sqrt(mean((log(ypred +1) - log(y+1))^2))
+  MAE = mean(abs(y-ypred))
+  MAPE = mean(abs(y-ypred)/y)*100
+  cat("RMSEP\n")
+  cat("================\n")
+  cat(RMSEP, "\n\n")
+  cat("RMSLEP\n")
+  cat("================\n")
+  cat(RMSLEP, "\n\n")
+  cat("MAE\n")
+  cat("================\n")
+  cat(MAE, "\n\n")
+  cat("MAPE\n")
+  cat("================\n")
+  cat(MAPE, "\n\n")
+  return(data.frame(RMSEP = RMSEP, RMSLEP = RMSLEP, MAE = MAE, MAPE = MAPE))
+}
+}
+#Plotting variable importance
+{rfimp = function(rffit, horiz=T) {barplot(sort(rffit$importance[,1]),horiz=horiz,
+                                 xlab="Mean Decreasing in Accuracy",main="Variable Importance")
+}
+}
+
+```
+
+The data was loaded and prepared in the Shirnkage Methods section. We are going to continue working with train_model1 and train_model2 data frames.
+
+### Model 1
+
+```{r}
+###### Model 1 #####
+{y = train_model1$formation_energy_ev_natom_log_y_plus_1
+X = train_model1
+cond.rf = randomForest(y~.,data=X,importance=F)
+}
+```
+
+We are splitting our training set into training and validation sets:
+```{r}
+
+####### Create validation set #######
+#trainmodel1 is X
+#response is y
+{n = nrow(X)
+set.seed(2019)
+sam = sample(1:n,size=floor(n*.6667),replace=F)
+X.train = X[sam,] #form training dataset
+X.valid = X[-sam,] #form validation dataset
+y.train = X.train$formation_energy_ev_natom_log_y_plus_1
+y.valid = X.valid$formation_energy_ev_natom_log_y_plus_1
+
+#cond.rf = randomForest(y.train~.,data=X.train)
+#plot(cond.rf)
+#abline(h=0.000128,col="red",lwd=2)
+} 
+```
+
+Now we are going to go through the process of finding optimal number of trees (ntree) and number of variables to randomly pick at each stage (mtry)
+
+```{r}
+#1st: choose optimal mtry's
+
+# results = rf.sscv(cond.rf,X,mtry=3)
+# results = rf.sscv(cond.rf,X,mtry=4)
+# results = rf.sscv(cond.rf,X,mtry=5)
+# results = rf.sscv(cond.rf,X,mtry=6)
+
+#Compare mtry's with errorest function
+{#m=4
+# m=4
+# myforest = function(formula,data){randomForest(formula,data,mtry=m)}
+# error.RF = numeric(10)
+# for (i in 1:10) error.RF[i] = errorest(y~.,
+#                                        data=X,model=myforest)$error
+# mean(error.RF)
+# summary(error.RF)
+# #m=5
+# m=5
+# myforest = function(formula,data){randomForest(formula,data,mtry=m)}
+# error.RF = numeric(10)
+# for (i in 1:10) error.RF[i] = errorest(y~.,
+#                                        data=X,model=myforest)$error
+# mean(error.RF)
+# summary(error.RF)
+# #m=6
+# m=6
+# myforest = function(formula,data){randomForest(formula,data,mtry=m)}
+# error.RF = numeric(10)
+# for (i in 1:10) error.RF[i] = errorest(y~.,
+#                                        data=X,model=myforest)$error
+# mean(error.RF)
+# summary(error.RF)
+# 
+# #m=7
+# m=7
+# myforest = function(formula,data){randomForest(formula,data,mtry=m)}
+# error.RF = numeric(10)
+# for (i in 1:10) error.RF[i] = errorest(y~.,
+#                                        data=X,model=myforest)$error
+# mean(error.RF)
+# summary(error.RF)
+}
+#2nd: Increasing the number of trees beyonf the default ntree=500
+#BEST = based on best mtry from above
+#BEST = 5
+
+# results = rf.sscv(cond.rf,X,mtry=BEST,ntree=500,B=250)
+# results = rf.sscv(cond.rf,X,mtry=BEST,ntree=750,B=250)
+# results = rf.sscv(cond.rf,X,mtry=BEST,ntree=1000,B=250)
 
 
+```
+
+```{r}
+###### Compare best mtry and ntree combos #######                        
+#ntree of 50, 80, 100, 350
+
+# cond.rf = randomForest(formation_energy_ev_natom_log_y_plus_1~.,data=X.train,ntree=50, mtry=9)
+# results = rf.sscv(cond.rf,X.train)
+# cond.rf = randomForest(formation_energy_ev_natom_log_y_plus_1~.,data=X.train,ntree=80)
+# results = rf.sscv(cond.rf,X.train)
+# cond.rf = randomForest(formation_energy_ev_natom_log_y_plus_1~.,data=X.train,ntree=100)
+# results = rf.sscv(cond.rf,X.train)
+# cond.rf = randomForest(formation_energy_ev_natom_log_y_plus_1~.,data=X.train,ntree=350)
+# results = rf.sscv(cond.rf,X.train)
+# cond.rf = randomForest(formation_energy_ev_natom_log_y_plus_1~.,data=X.train,ntree=150, mtry =12)
+# results = rf.sscv(cond.rf,X.train)
+
+#From best to least: ntree = 350, then 80, then 50, then 100
+
+#mtry
+
+# cond.rf = randomForest(formation_energy_ev_natom_log_y_plus_1~.,data=X.train,mtry = 6,ntree=1000)
+# results = rf.sscv(cond.rf,X.train)
+# cond.final = randomForest(formation_energy_ev_natom_log_y_plus_1~.,data=X.train,mtry=5,ntree=750)
+# results = rf.sscv(cond.rf,X.train)
+
+#mtry=5, ntree=350
+#mtry=5, ntree=750
+#mtry=6, ntree=1000
+#mtry=6, ntree=350
+```
+
+Our thorough process of exploring different number of bootstrap trees and number of variables to randomly pick at each stage gave us the following optimal hyperparameters: Best combo is: <b> mtry=5 and ntree=350 </b>
+
+This gives us our final model:
+```{r}
+####### Final randomForest model #######
+{cond.final = randomForest(formation_energy_ev_natom_log_y_plus_1~.,data=X.train,mtry=5,ntree=350, importance = T)
+ypred = predict(cond.final,newdata=X.valid)
+prediciton.rf = PredAcc(y.valid,ypred)
+}
+```
+
+Let's see how our final random forest model predicts. We are plotting the actual formation energy values vs. predicted for both the training set data (figure on the left) and validaiton set data (figure on the right)
+
+```{r fig.height=5, fig.width=10}
+par(mfrow=c(1,2))
+plot(y.train,predict(cond.final),xlab="Actual Formation Energy",ylab="Fitted Formation Energy",
+     main= paste("Training Data", " R^2: ", 
+                 round((cor(y.train, 
+                            predict(cond.final))^2),4)))
+abline(0,1,col="red",lwd=2)
+
+plot(y.valid, ypred, xlab="Actual Formation Energy",ylab="Predicted Formation Energy",
+     main=paste("Test Data", "R^2: ",
+                round((cor(y.valid, 
+                           ypred)^2),4)))
+abline(0,1,col="red",lwd=2)
+#par(mfrow=c(1,1))
+```
+
+Our final random forest model predicts with accuracy of RMSLEP=0.0268 and gives us 86.35% rsquared value. It is by far the best model for predicting formation energy.
+
+#### Predicting on Test Set
+
+<b> Prediction on Test Set </b>
+```{r}
+randomforest.final = cond.final
+```
+
+```{r}
+cond_test_final %>%
+  select (-c(bandgap_energy_ev_log_y_plus_1,formation_energy_ev_natom_log_y_plus_1,ID)) -> Modified_Xs
+```
+
+
+```{r}
+Formation_Predictions = predict(randomforest.final, as.matrix(Modified_Xs))
+write.csv(Formation_Predictions, file = "formation_predictions_RandomForest.csv")
+```
+
+
+### Model 2 
+
+
+```{r}
+############ Model 2 #################
+{y = train_model2_no_box_cox$bandgap_energy_ev_log_y_plus_1
+X = train_model2_no_box_cox
+cond.rf = randomForest(y~.,data=X,importance=T)
+}
+```
+
+We are splitting our training set into training and validation sets:
+```{r}
+####### Create validation set #######
+#trainmodel2 is X
+#response is y
+{n = nrow(X)
+set.seed(2019)
+sam = sample(1:n,size=floor(n*.6667),replace=F)
+X.train = X[sam,] #form training dataset
+X.valid = X[-sam,] #form validation dataset
+y.train = X.train$bandgap_energy_ev_log_y_plus_1
+y.valid = X.valid$bandgap_energy_ev_log_y_plus_1
+
+# par(mfrow=c(1,1))
+# cond.rf = randomForest(y.train~.,data=X.train)
+# plot(cond.rf)
+# abline(h=0.000128,col="red",lwd=2)
+}
+```
+
+
+Now we are going to go through the process of finding optimal number of trees (ntree) and number of variables to randomly pick at each stage (mtry)
+
+```{r}
+#1st: choose optimal mtry's
+
+# results = rf.sscv(cond.rf,X,mtry=3)
+# results = rf.sscv(cond.rf,X,mtry=4)
+# results = rf.sscv(cond.rf,X,mtry=5)
+# results = rf.sscv(cond.rf,X,mtry=6)
+
+{#m=4
+# m=4
+# myforest = function(formula,data){randomForest(formula,data,mtry=m)}
+# error.RF = numeric(10)
+# for (i in 1:10) error.RF[i] = errorest(y~.,
+#                                        data=X,model=myforest)$error
+# mean(error.RF)
+# summary(error.RF)
+# #m=5
+# m=5
+# myforest = function(formula,data){randomForest(formula,data,mtry=m)}
+# error.RF = numeric(10)
+# for (i in 1:10) error.RF[i] = errorest(y~.,
+#                                        data=X,model=myforest)$error
+# mean(error.RF)
+# summary(error.RF)
+# #m=6
+# m=6
+# myforest = function(formula,data){randomForest(formula,data,mtry=m)}
+# error.RF = numeric(10)
+# for (i in 1:10) error.RF[i] = errorest(y~.,
+#                                        data=X,model=myforest)$error
+# mean(error.RF)
+# summary(error.RF)
+# 
+# #m=7
+# m=7
+# myforest = function(formula,data){randomForest(formula,data,mtry=m)}
+# error.RF = numeric(10)
+# for (i in 1:10) error.RF[i] = errorest(y~.,
+#                                        data=X,model=myforest)$error
+# mean(error.RF)
+# summary(error.RF)
+}
+#2nd: Increasing the number of trees beyonf the default ntree=500
+#BEST = based on best mtry from above
+#BEST = 4
+
+# results = rf.sscv(cond.rf,X,mtry=BEST,ntree=500,B=250)
+# results = rf.sscv(cond.rf,X,mtry=BEST,ntree=750,B=250)
+# results = rf.sscv(cond.rf,X,mtry=BEST,ntree=1000,B=250)
+
+#mtry=4,ntree=1000
+
+```
+
+
+
+```{r}
+###### Compare best mtry and ntree combos #######                        
+#ntree of 50, 80, 100, 350
+
+# cond.rf = randomForest(bandgap_energy_ev_log_y_plus_1~.,data=X.train,ntree=40)
+# results = rf.sscv(cond.rf,X.train)
+# cond.rf = randomForest(bandgap_energy_ev_log_y_plus_1~.,data=X.train,ntree=80)
+# results = rf.sscv(cond.rf,X.train)
+# cond.rf = randomForest(bandgap_energy_ev_log_y_plus_1~.,data=X.train,ntree=750)
+# results = rf.sscv(cond.rf,X.train)
+# cond.rf = randomForest(bandgap_energy_ev_log_y_plus_1~.,data=X.train,ntree=350)
+# results = rf.sscv(cond.rf,X.train)
+# cond.rf = randomForest(bandgap_energy_ev_log_y_plus_1~.,data=X.train,ntree=150, mtry = 6)
+# results = rf.sscv(cond.rf,X.train)
+
+# #mtry
+
+# cond.rf = randomForest(bandgap_energy_ev_log_y_plus_1~.,data=X.train,mtry = 4,ntree=1000)
+# results = rf.sscv(cond.rf,X.train)
+# cond.final = randomForest(bandgap_energy_ev_log_y_plus_1~.,data=X.train,mtry=5,ntree=750)
+# results = rf.sscv(cond.rf,X.train)
+
+#mtry=4, ntree=1000
+#mtry=5, ntree=750
+
+#Best combo is: mtry=4 and ntree=1000
+
+```
+
+Our thorough process of exploring different number of bootstrap trees and number of variables to randomly pick at each stage gave us the following optimal hyperparameters: Best combo is: <b> mtry=4 and ntree=1000 </b>
+
+This gives us our final model:
+
+```{r}
+####### Final randomForest model #######
+{cond.final = randomForest(bandgap_energy_ev_log_y_plus_1~.,data=X.train,mtry=4,ntree=1000, importance = T)
+ypred = predict(cond.final,newdata=X.valid)
+prediction = PredAcc(y.valid, ypred)
+}
+```
+
+Let's see how our final random forest model predicts. We are plotting the actual formation energy values vs. predicted for both the training set data (figure on the left) and validaiton set data (figure on the right)
+
+```{r fig.height=5, fig.width=10}
+{par(mfrow=c(1,2))
+plot(y.train,predict(cond.final),xlab="Actual Formation Energy",ylab="Fitted Formation Energy",
+     main= paste("Training Data", " R^2: ", 
+                 round((cor(y.train, 
+                            predict(cond.final))^2),4)))
+abline(0,1,col="red",lwd=2)
+
+plot(y.valid, ypred, xlab="Actual Formation Energy",ylab="Predicted Formation Energy",
+     main=paste("Test Data", "R^2: ",
+                round((cor(y.valid, 
+                           ypred)^2),4)))
+abline(0,1,col="red",lwd=2)
+#par(mfrow=c(1,1))
+}
+```
+
+Our final random forest model predicts with accuracy of RMSLEP=0.05864 and gives us 91.27% rsquared value. It is not a good model to predict bandgap energy. Lasso, Elastic Net (alpha=0.5), Treed Regression, MARS, and XGboosting are performing better than Random Forest for Model 2.
+
+Our last statistical model to consider are Neural Networks
+
+## Neural Networks
+
+```{r include=FALSE}
+###### Libraries #####
+{
+  library(tidyr)
+  library(dplyr)
+  library(ggplot2)
+  library(nnet)
+  #library(Ecfun)
+  library(car)
+  library(ISLR)
+  #library(MASS)
+  library(glmnet)
+  library(pls)
+  library(corrplot)
+  require(stringr)
+  library(gridExtra)
+  library(ipred)
+  library(randomForest)
+  library(nnet)
+  library(GGally)
+}
+```
+
+Functions:
+```{r}
+###### Functions #####
+#detach("package:Ecfun", unload = TRUE)
+#rf.sscv Monte-Carlo CV function
+{rf.sscv = function(fit,data,p=.667,B=100,mtry=fit$mtry,ntree=fit$ntree) {
+  RMSEP = rep(0,B)
+  RMSLEP = rep(0,B)
+  MAEP = rep(0,B)
+  MAPEP = rep(0,B)
+  y = fit$y
+  n = nrow(data)
+  ss <- floor(n*p)
+  for (i in 1:B) {
+    sam = sample(1:n,ss,replace=F)
+    fit2 = randomForest(formula(fit),data=data[sam,],mtry=mtry,ntree=ntree)
+    ynew = predict(fit2,newdata=data[-sam,])
+    RMSEP[i] = sqrt(mean((y[-sam]-ynew)^2))
+    RMSLEP[i] = sqrt(mean((log(ynew +1) - log(y[-sam] +1))^2))
+    MAEP[i] = mean(abs(y[-sam]-ynew))
+    MAPEP[i] = mean((abs(y[-sam]-ynew)/y[-sam]))
+    
+  }
+  RMSEP = mean(RMSEP)
+  RMSLEP = mean(RMSLEP)
+  MAEP = mean(MAEP)
+  MAPEP = mean(MAPEP)
+  cat("RMSEP\n")
+  cat("===============\n")
+  cat(RMSEP,"\n\n")
+  cat("RMSLEP\n")
+  cat("===============\n")
+  cat(RMSLEP,"\n\n")
+  cat("MAEP\n")
+  cat("===============\n")
+  cat(MAEP,"\n\n")
+  cat("MAPEP\n")
+  cat("===============\n")
+  cat(MAPEP,"\n\n")
+  temp = data.frame(RMSEP=RMSEP, RMSLEP=RMSLEP, MAEP=MAEP,MAPEP=MAPEP)
+  return(temp)
+}
+
+}
+#Predict Accuracy function
+{PredAcc = function(y, ypred){
+  RMSEP = sqrt(mean((y-ypred)^2))
+  RMSLEP = sqrt(mean((log(ypred +1) - log(y+1))^2))
+  MAE = mean(abs(y-ypred))
+  MAPE = mean(abs(y-ypred)/y)*100
+  cat("RMSEP\n")
+  cat("================\n")
+  cat(RMSEP, "\n\n")
+  cat("RMSLEP\n")
+  cat("================\n")
+  cat(RMSLEP, "\n\n")
+  cat("MAE\n")
+  cat("================\n")
+  cat(MAE, "\n\n")
+  cat("MAPE\n")
+  cat("================\n")
+  cat(MAPE, "\n\n")
+  return(data.frame(RMSEP = RMSEP, RMSLEP = RMSLEP, MAE = MAE, MAPE = MAPE))
+}
+}
+#Plotting variable importance
+{rfimp = function(rffit, horiz=T) {barplot(sort(rffit$importance[,1]),horiz=horiz,
+                                           xlab="Mean Decreasing in Accuracy",main="Variable Importance")
+}
+}
+
+```
+
+The data was loaded and prepared in the Shirnkage Methods section. We are going to continue working with train_model1 and train_model2 data frames.
+```{r echo=TRUE, include=FALSE}
+###### Model 1 #####
+{y = train_model1$formation_energy_ev_natom_log_y_plus_1
+X = train_model1
+}
+
+#tcX = train_model1_no_box_cox[,c(1,2,25,26,27)]
+#ggpairs(tcX)
+#require(caret)
+set.seed(1111)
+mod1 = nnet(formation_energy_ev_natom_log_y_plus_1~., data = X, size=6, skip=T, linout=T, decay=0.0001, maxit=25000)
+#summary(mod1)
+```
+
+
+```{r fig.height=4, fig.width=5}
+plot(X$formation_energy_ev_natom_log_y_plus_1, fitted(mod1))
+abline(0,1, lwd=2, col="blue")
+```
+
+We are now splitting the training set into the training and validation sets
+
+```{r}
+###### Create train, dev, and test sets #######
+
+{
+n = nrow(X)
+set.seed(1111)
+sam = sample(1:n,size=floor(n*.6667),replace=F)
+X.train = X[sam,] #form training dataset
+X.valid = X[-sam,] #form validation dataset
+y.train = X.train$formation_energy_ev_natom_log_y_plus_1
+y.valid = X.valid$formation_energy_ev_natom_log_y_plus_1
+}
+```
+
+Fit three different Neural Net models with different hyperparameters:
+
+```{r echo=TRUE, include=FALSE}
+nn1 = nnet(formation_energy_ev_natom_log_y_plus_1~., data = X.train, size=6, skip=F, linout=T, decay=0.01, maxit=25000)
+nn2 = nnet(formation_energy_ev_natom_log_y_plus_1~., data = X.train, size=8, skip=F, linout=T, decay=0.005, maxit=25000)
+nn3 = nnet(formation_energy_ev_natom_log_y_plus_1~., data = X.train, size=8, skip=T, linout=T, decay=0.05, maxit=25000)
+
+```
+
+Assign the Neural Net model into 'nn' below to check how it predicts and fits our data:
+
+```{r fig.height=5, fig.width=10}
+#best nn2 so far
+nn = nn2
+
+{ypred = predict(nn, newdata = X.valid)
+prediction = PredAcc(y.valid, ypred)
+}
+```
+
+```{r fig.height=5, fig.width=10}
+{par(mfrow=c(1,2))
+plot(y.train,predict(nn),xlab="Actual Formation Energy",ylab="Fitted Formation Energy",
+     main= paste("Training Data", " R^2: ", 
+                 round((cor(y.train, 
+                            predict(nn1))^2),4)))
+abline(0,1,col="red",lwd=2)
+
+plot(y.valid, ypred, xlab="Actual Formation Energy",ylab="Predicted Formation Energy",
+     main=paste("Test Data", "R^2: ",
+                round((cor(y.valid, 
+                           ypred)^2),4)))
+abline(0,1,col="red",lwd=2)
+par(mfrow=c(1,1))
+}
+```
+
+Our final Neural Network model predicts with accuracy of RMSLEP=0.03075 and gives us 82.39% rsquared value. It is not a good model to predict formaiton energy. 
+
+###Model 2
+
+```{r echo=TRUE, include=FALSE}
+###### Model 2 #####
+{y = train_model2$bandgap_energy_ev_log_y_plus_1
+X = train_model2
+}
+
+#tcX = train_model1_no_box_cox[,c(1,2,25,26,27)]
+#ggpairs(tcX)
+#require(caret)
+set.seed(1111)
+mod1 = nnet(bandgap_energy_ev_log_y_plus_1~., data = X, size=6, skip=T, linout=T, decay=0.0001, maxit=25000)
+#summary(mod1)
+```
+
+
+```{r fig.height=4, fig.width=5}
+plot(X$bandgap_energy_ev_log_y_plus_1, fitted(mod1))
+abline(0,1, lwd=2, col="blue")
+```
+
+We are now splitting the training set into the training and validation sets
+
+```{r}
+###### Create train, dev, and test sets #######
+
+{n = nrow(X)
+set.seed(1111)
+sam = sample(1:n,size=floor(n*.6667),replace=F)
+X.train = X[sam,] #form training dataset
+X.valid = X[-sam,] #form validation dataset
+y.train = X.train$bandgap_energy_ev_log_y_plus_1
+y.valid = X.valid$bandgap_energy_ev_log_y_plus_1
+
+#cond.rf = randomForest(y.train~.,data=X.train)
+#plot(cond.rf)
+#abline(h=0.000128,col="red",lwd=2)
+} 
+```
+
+Fit three different Neural Net models with different hyperparameters:
+```{r echo=TRUE, include=FALSE}
+nn1 = nnet(bandgap_energy_ev_log_y_plus_1~., data = X.train, size=6, skip=F, linout=T, decay=0.01, maxit=25000)
+nn2 = nnet(bandgap_energy_ev_log_y_plus_1~., data = X.train, size=8, skip=F, linout=T, decay=0.005, maxit=25000)
+nn3 = nnet(bandgap_energy_ev_log_y_plus_1~., data = X.train, size=10, skip=T, linout=T, decay=0.05, maxit=25000)
+
+```
+
+Assign the Neural Net model into 'nn' below to check how it predicts and fits our data:
+
+```{r}
+#best nn3 so far
+nn = nn3
+
+{ypred = predict(nn, newdata = X.valid)
+prediction = PredAcc(y.valid, ypred)
+}
+```
+
+```{r fig.height=5, fig.width=10}
+{ 
+  par(mfrow=c(1,2))
+  plot(y.train,predict(nn1),xlab="Actual Formation Energy",ylab="Fitted Formation Energy",
+       main= paste("Training Data", " R^2: ", 
+                   round((cor(y.train, 
+                              predict(nn1))^2),4)))
+  abline(0,1,col="red",lwd=2)
+  
+  plot(y.valid, ypred, xlab="Actual Formation Energy",ylab="Predicted Formation Energy",
+       main=paste("Test Data", "R^2: ",
+                  round((cor(y.valid, 
+                             ypred)^2),4)))
+  abline(0,1,col="red",lwd=2)
+  par(mfrow=c(1,1))
+}
+
+```
+
+Our final Neural Network model predicts with accuracy of RMSLEP=0.0618 and gives us 91.42% rsquared value. It is not a good model to predict bandgap energy. 
+
+## Keras Regressor: dense neural network
+```{r}
+####### KERAS ########
+require(keras)
+{y = train_model1$formation_energy_ev_natom_log_y_plus_1
+train_data = as.matrix(scale(train_model1))
+}
+```
+
+```{r}
+build_model <- function() {
+  
+  model <- keras_model_sequential() %>%
+    layer_dense(units = 64, activation = "relu",
+                input_shape = dim(train_data)[2]) %>%
+    layer_dropout(0.6) %>%
+    layer_dense(units = 64, activation = "relu") %>%
+    layer_dropout(0.6) %>%
+    layer_dense(units = 1, activation = "linear")
+  
+  model %>% compile(
+    loss = "mse",
+    optimizer = optimizer_rmsprop(),
+    metrics = list("mean_squared_logarithmic_error")
+  )
+  
+ return(model)
+}
+```
+
+```{r}
+model <- build_model()
+model %>% summary()
+```
+
+```{r}
+# Display training progress by printing a single dot for each completed epoch.
+print_dot_callback <- callback_lambda(
+  on_epoch_end = function(epoch, logs) {
+    if (epoch %% 80 == 0) cat("\n")
+    cat(".")
+  }
+)    
+epochs <- 50
+```
+
+```{r}
+# Fit the model and store training stats
+history <- model %>% fit(
+  train_data,
+  y,
+  epochs = epochs,
+  validation_split = 0.2,
+  verbose = 0,
+  callbacks = list(print_dot_callback)
+)
+
+```
+
+```{r}
+sqrt(mean(history$metrics$mean_squared_logarithmic_error))
+```
+
+Not performing well...
+
+#Final Models
+
+Our Random Forest model performed the best in prdicting the formation of energy, whereas the XGboost Model performed the best in predicting the bandgap energy
+
+Below, is the comparison of all the models we ran, in predicting formation energy and bandgap energy:
+```{r}
+#Sorted for RMSLEP for formation energy
+models.all = read.csv("model_comparison.csv")
+models.all
+```
+
+```{r}
+#Sorted for RMSLEP for bandgap energy
+models.all[order(models.all$RMSLEP.for.bandgap),]
+```
+
+
+## Predicting Formation of Energy: Random Forest
+
+Revisiting the best model and going over the variable importance:
+
+```{r}
+#randomforest.final
+```
+
+
+## Predicting Bandgap Energy: XGboost
+
+```{r}
+
+```
 
