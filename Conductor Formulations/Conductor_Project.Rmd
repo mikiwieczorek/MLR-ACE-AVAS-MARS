@@ -496,6 +496,8 @@ fviz_pca_biplot(cond.PCA, repel = F,
 
 ## MARS
 
+###Formation Energy Model
+
 To start off, we will attempt a Mars Model using our new variables for just formation energy.
 
 
@@ -589,6 +591,8 @@ Looking at all of the variables, are current model uses almost all of contributi
 plotmo(form.mars)
 ```
 For form energy preictions using Mars, here we have our best.
+
+###Bangap Energy
 
 Next, we will devise a model for bandgap energy
 
@@ -1420,19 +1424,6 @@ Final Model:
 XG_band = xgboost(data = form_test_x2_mat, label = form_test_y2_list, nrounds = 210, nthread = 7, verbose = T, objective = "reg:squaredlogerror", eta = 0.4, max.depth = 1, lambda = 0.5, alpha = 0, stratified = F, gamma = 0, colsample_bytree=1, maximize = 0, min_child_weight=15)
 ```
 
-
-
-### Predicting on Test Set
-Precitions for Bandgap using XGboost
-
-```{r}
-cond_test_ready %>%
-  select (-c(bandgap_energy_ev_log_y_plus_1,formation_energy_ev_natom_log_y_plus_1,ID)) -> Modified_Xs
-
-Bandgap_Predictions = predict(XG_band, as.matrix(Modified_Xs))
-
-write.csv(Bandgap_Predictions, file = "bandgap_predictions_XGboost.csv")
-```
 
 Variable importance for final model for bandgap energy using top 10 predictors.
 
@@ -2532,7 +2523,88 @@ Revisiting the best model and going over the variable importance:
 
 ## Predicting Bandgap Energy: XGboost
 
+
 ```{r}
+# cond_test_ready %>%
+#   select (-c(bandgap_energy_ev_log_y_plus_1,formation_energy_ev_natom_log_y_plus_1,ID)) -> Modified_Xs
+# 
+# Bandgap_Predictions = predict(XG_band, as.matrix(Modified_Xs))
+# 
+# write.csv(Bandgap_Predictions, file = "bandgap_predictions_XGboost.csv")
 
 ```
+
+As a reminder, using this model:
+
+```{r}
+# XG_band = xgboost(data = form_test_x2_mat, label = form_test_y2_list, nrounds = 210, nthread = 7, verbose = T, objective = "reg:squaredlogerror", eta = 0.4, max.depth = 1, lambda = 0.5, alpha = 0, stratified = F, gamma = 0, colsample_bytree=1, maximize = 0, min_child_weight=15)
+```
+
+
+For predicting bandgap energy using RMSLE as our metric, our XGBoost won out over every other model we tried (0.029176). Digging deeper into it, we found that the algorithm performed best going around 210 rounds with a maximum of 7 threads for any given boost. A ridge regression component did glean some improvement, with oging about halfway to mximium potential being implemented. Oddly, LASSO components were found to only detract from predictive power, and were thus not included. Each child node needed to have at least 15 instances of it being used to be created, and the most layers any single tree could have is 6. The number of variable supplied to the trees was maximized. The learning rate was fairly low at 0.4, which seems low, but makes more sense when one looks at what the structure of the top trees looks like.
+
+
+
+Variable importance for final model for bandgap energy using top 10 predictors.
+
+
+```{r}
+mat = xgb.importance(feature_names=colnames(form_test_x2_mat),model=XG_band)
+xgb.plot.importance(importance_matrix=mat[1:10])
+
+```
+
+Looking at all predictors
+
+```{r}
+mat = xgb.importance(feature_names=colnames(form_test_x2_mat),model=XG_band)
+xgb.plot.importance(importance_matrix=mat[1:26])
+```
+
+We can see from the charts above that the most important varaibles by far were what percent of Indium and Aluminum were in each conductor, with the two of the being repsonsible for almost 70% of the result. Additionally, only a small portion of our variable were actually used, with both existing metrics and new ones we created being used. Spacegroups themselves numerically were veary important, as was the category specfically calling out spacegroup 167, which in itself was distinct enough to warrent a little over 2% importance. Lattice vector angles 1 and 3, and angle degrees gamme and alpha were also used, with and beta and vector 2 being absent, likely as geometrically the information can be considered redudant. Beyond that, nost variables were ignored, probably due to either again being redundant or simply not reelvant.
+
+
+Looking at the all the tree plots is not really practical with XGboost, especially considering we would have over 200 0f them due to how the trees are structered. Below is shown the first few trees in the boosted chain just to give an idea as to what each boost does
+
+```{r}
+require(DiagrammeR)
+xgb.plot.tree(model = XG_band, trees = 0, show_node_id = T)
+
+```
+
+```{r}
+xgb.plot.tree(model = XG_band, trees = 1, show_node_id = T)
+```
+
+```{r}
+xgb.plot.tree(model = XG_band, trees = 2, show_node_id = T)
+```
+
+```{r}
+xgb.plot.tree(model = XG_band, trees = 3, show_node_id = T)
+```
+
+
+Note how the first couple of trees with the largest impact are all very simple. Given the small amount of variables and our decision to lower the learning rate along with having a few key predictors found to be useful, it makes sense that our extreme boosting mostly covered simple trees that by themselves were still fairly compentant, which lines up with the results from our MARS and Shrinkage Models, which tended to follow similar patterns in terms of variable importance.
+
+XGboosts implementation does not a good way to tell specifically how the variables effect the data. However, we can use our other models that performed almost as well to get at least a similar understanding as to how specific predictors affect the results. Our MARS model, being the second best for our result, only being about 0.02 RMSLE off, should work nicely.
+
+```{r}
+
+cond_train3_band_pifs = read.csv("cond_train3_band_stup.csv")
+
+band.mars2 = earth(bandgap_energy_ev_log_y_plus_1~.,degree = 2, data = cond_train3_band_pifs, nk = 30, nfold = 20, nprune =  15, pmethod = "exhaustive" )
+
+plotmo(band.mars2, caption = NULL )
+```
+
+Variable names had to be changed in order to prevent plotmo from failing to provide readable plots, as shown in the new read in.
+
+From these plots generated using our model, we can tell that if one wanted to maximize bandgap energy they should add a higher percentage of Aluminum atoms,  have a combination of less vector degree 3 and less lattice angle alpha, and reduce the total amount of indium present in the formulation, and crank up lattice angle gamma,. However, if one is to increase angle gamma, also add in a little bit of vector angle 1 to get the maximal return. For spacegroup, go with specifically spacegroup 167 if you can, as it is really the only spacegroup to meanifully increase this response.
+
+
+
+
+
+
 
