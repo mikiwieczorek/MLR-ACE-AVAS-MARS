@@ -1,0 +1,9 @@
+﻿Model,RMSLEP for formation,RMSLEP for bandgap
+Random Forest,0.0267,0.0586
+Treed Regression,0.0272,0.0554
+Xgboosting,0.0292,0.0531
+Neural Net,0.0304,0.0617
+MARS,0.0304,0.0549
+Lasso,0.0411,0.0574
+"Elastic Net, alpha = 0.5",0.0427,0.0573
+Ridge,0.0446,0.0604
