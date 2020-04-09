@@ -98,24 +98,25 @@
 ###### For Elastic Net: finding lambda and fitting the model ########
 #Find best lambda
 { 
-  par(mfrow=c(4,4))
-  #Change alpha
-  alpha = 0.8
-  cv.en = cv.glmnet(X,y,alpha=alpha)
-  bestlam.en = cv.en$lambda.min
+  # par(mfrow=c(4,4))
+  # #Change alpha
+  # alpha = 0.8
+  # cv.en = cv.glmnet(X,y,alpha=alpha)
+  # bestlam.en = cv.en$lambda.min
   #plot(cv.en)
   #title(main = paste("Best log(lambda) for Elastic Net", (round(log(bestlam.en),digits = 2))), sub = paste("Best lambda:", round(bestlam.en,5)))
-  #en.results = glmnet.ssmc(X,y,p=.75, M=1000,alpha=0.1,lambda=bestlam.en)
 }
 #Fit with optimal lambda
 {
-  en.mod = glmnet(X,y,alpha=alpha, lambda =bestlam.en)
+  # en.mod = glmnet(X,y,alpha=alpha, lambda =bestlam.en)
+  
   #y and yhat correlation
-  en.cor = cor(y, predict(en.mod, newx = X))
+  # en.cor = cor(y, predict(en.mod, newx = X))
+  
   #y and yhat correlation^2 = R^2
-  en.rsqaured = cor(y, predict(en.mod, newx = X))^2
-  plot(y,predict(en.mod,newx=X),xlab="Actual Age (y-values)",ylab="Predicted Age (yhat-values)", main = paste("Elastic Net Model:", "   ", "Correlation:", round(en.cor,4), "   ", "R^2:", round(en.rsqaured,4)),
-       sub = paste("alpha:", " ", alpha))
+  # en.rsqaured = cor(y, predict(en.mod, newx = X))^2
+  # plot(y,predict(en.mod,newx=X),xlab="Actual Age (y-values)",ylab="Predicted Age (yhat-values)", main = paste("Elastic Net Model:", "   ", "Correlation:", round(en.cor,4), "   ", "R^2:", round(en.rsqaured,4)),
+  #      sub = paste("alpha:", " ", alpha))
 }
 
 ###### Elastic net #########
@@ -172,6 +173,32 @@ write.csv(df.metrics, file = "Model_1_shrinkage_regression_results.csv", row.nam
 X = scale(model.matrix(bandgap_energy_ev_log_y_plus_1~., data = train_model2)[,-1])
 y = train_model2$bandgap_energy_ev_log_y_plus_1
 }
+###### For Elastic Net: finding lambda and fitting the model ########
+#Find best lambda
+{ 
+  # par(mfrow=c(4,4))
+  #Change alpha
+  # alpha = 0.8
+  # cv.en = cv.glmnet(X,y,alpha=alpha)
+  # bestlam.en = cv.en$lambda.min
+  #plot(cv.en)
+  #title(main = paste("Best log(lambda) for Elastic Net", (round(log(bestlam.en),digits = 2))), sub = paste("Best lambda:", round(bestlam.en,5)))
+  #en.results = glmnet.ssmc(X,y,p=.75, M=1000,alpha=0.1,lambda=bestlam.en)
+}
+#Fit with optimal lambda
+{
+  # en.mod = glmnet(X,y,alpha=alpha, lambda =bestlam.en)
+  # 
+  # #y and yhat correlation
+  # en.cor = cor(y, predict(en.mod, newx = X))
+  # 
+  # #y and yhat correlation^2 = R^2
+  # en.rsqaured = cor(y, predict(en.mod, newx = X))^2
+  # plot(y,predict(en.mod,newx=X),xlab="Actual Age (y-values)",ylab="Predicted Age (yhat-values)", main = paste("Elastic Net Model:", "   ", "Correlation:", round(en.cor,4), "   ", "R^2:", round(en.rsqaured,4)),
+  #      sub = paste("alpha:", " ", alpha))
+}
+
+
 ###### Elastic net #########
 {alpha1 = 0.8
 cv.en = cv.glmnet(X,y,alpha=alpha1)
@@ -217,26 +244,7 @@ df.metrics = as.data.frame(metrics)
 write.csv(df.metrics, file = "Model_2_shrinkage_regression_results.csv", row.names = FALSE)
 }
 
-###### For Elastic Net: finding lambda and fitting the model ########
-#Find best lambda
-{ 
-  par(mfrow=c(4,4))
-  #Change alpha
-  alpha = 0.8
-  cv.en = cv.glmnet(X,y,alpha=alpha)
-  bestlam.en = cv.en$lambda.min
-  #plot(cv.en)
-  #title(main = paste("Best log(lambda) for Elastic Net", (round(log(bestlam.en),digits = 2))), sub = paste("Best lambda:", round(bestlam.en,5)))
-  #en.results = glmnet.ssmc(X,y,p=.75, M=1000,alpha=0.1,lambda=bestlam.en)
-}
-#Fit with optimal lambda
-{
-  en.mod = glmnet(X,y,alpha=alpha, lambda =bestlam.en)
-  #y and yhat correlation
-  en.cor = cor(y, predict(en.mod, newx = X))
-  #y and yhat correlation^2 = R^2
-  en.rsqaured = cor(y, predict(en.mod, newx = X))^2
-  plot(y,predict(en.mod,newx=X),xlab="Actual Age (y-values)",ylab="Predicted Age (yhat-values)", main = paste("Elastic Net Model:", "   ", "Correlation:", round(en.cor,4), "   ", "R^2:", round(en.rsqaured,4)),
-       sub = paste("alpha:", " ", alpha))
-}
+
+
+
 

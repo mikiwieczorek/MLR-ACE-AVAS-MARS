@@ -252,10 +252,10 @@ require(keras)
 train_data = as.matrix(scale(train_model1))
 }
 
-metric_RMSLEP <- function(y, ) {
-  metric_mean_squared_logarithmic_error(y,y_pred)
-}
-
+# metric_RMSLEP <- function(y, ) {
+#   metric_mean_squared_logarithmic_error(y,y_pred)
+# }
+# 
 
 
 build_model <- function() {
@@ -306,7 +306,9 @@ history <- model %>% fit(
 plot(history, metrics = "mean_squared_logarithmic_error", smooth = FALSE) +
   coord_cartesian(ylim = c(0, 5))
 
-history$metrics
+sqrt(mean(history$metrics$mean_squared_logarithmic_error))
+
+
 # The patience parameter is the amount of epochs to check for improvement.
 early_stop <- callback_early_stopping(monitor = "val_loss", patience = 20)
 
@@ -320,6 +322,7 @@ history <- model %>% fit(
   callbacks = list(early_stop, print_dot_callback)
 )
 
-plot(history, metrics = "mean_absolute_error", smooth = FALSE) +
+plot(history, metrics = "mean_squared_logarithmic_error", smooth = FALSE) +
   coord_cartesian(xlim = c(0, 50), ylim = c(0, 5))
 
+sqrt(mean(history$metrics$mean_squared_logarithmic_error))
