@@ -1,0 +1,12 @@
+---
+title: "Nearest Neighbor and Naive Bayes"
+author: "Samuel A, Mikolaj W"
+date: "April 14, 2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
