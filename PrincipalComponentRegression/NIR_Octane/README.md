@@ -1,4 +1,4 @@
-# NIT Octane
+# NIR Octane
 
 - [Correlation structure](#Correlation-structure)
 - [Principal Component Regression](#Principal-Component-Regression)
@@ -23,8 +23,6 @@ setwd("~/OneDrive - MNSCU/myGithub/Supervised_Learning/Multiple_Linear_Regressio
 data(gasoline)
 ```
 
-This data consits of n=30 subjects and 403 columns that represent
-genetic marker intensity measurments for 403 different genes.
 
 ``` r
 gasoline.x = gasoline$NIR
