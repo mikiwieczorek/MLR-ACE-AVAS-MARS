@@ -5,9 +5,11 @@ date: "April 14, 2020"
 output: word_document
 ---
 
-PROBLEM  1 ––  SATELLITE IMAGE DATA
+# SATELLITE IMAGE DATA
+
 The goal here is to predict the type of ground cover from a satellite image broken up into pixels.
 Description from UCI Machine Learning database:
+
 The database consists of the multi-spectral values of pixels in 3x3 neighborhoods in a satellite image, and the classification associated with the central pixel in each neighborhood. The aim is to predict this classification, given the multi-spectral values. In the sample database, the class of a pixel is coded as a number. 
 
 The Landsat satellite data is one of the many sources of information available for a scene. The interpretation of a scene by integrating spatial data of diverse types and resolutions including multispectral and radar data, maps indicating topography, land use etc. is expected to assume significant importance with the onset of an era characterized by integrative approaches to remote sensing (for example, NASA's Earth Observing System commencing this decade). Existing statistical methods are ill-equipped for handling such diverse data types. Note that this is not true for Landsat MSS data considered in isolation (as in this sample database). This data satisfies the important requirements of being numerical and at a single resolution, and standard maximum-likelihood classification performs very well. Consequently, for this data, it should be interesting to compare the performance of other methods against the statistical approach. 
@@ -30,15 +32,15 @@ Note: There are no examples with class 6 in this dataset.
 The data is given in random order and certain lines of data have been removed so you cannot reconstruct the original image from this dataset. 
 
 In each line of data the four spectral values for the top-left pixel are given first followed by the four spectral values for the top-middle pixel and then those for the top-right pixel, and so on with the pixels read out in sequence left-to-right and top-to-bottom. Thus, the four spectral values for the central pixel are given by attributes 17,18,19 and 20. 
-You can read the data into R from the file SATimage.csv which is available in the data set section of my course1 website.
 
 ```{r}
-setwd("C:/Users/qs5834mm/Desktop/DSCI 425/Git_R/Assignment_2/MLR-ACE-AVAS-MARS/Nearest Neighbor and Naive Bayes Classifiers")
+setwd(getwd())
 SATimage = read.csv("SATimage.csv")
 SATimage = data.frame(class=as.factor(SATimage$class),SATimage[,1:36])
 ```
 
 This command makes sure that the response is interpreted as a factor (categorical) rather than as a number.  Use the SATimage as the data frame throughout.
+
 Create a test and training set using the code below:
 
 ```{r}
@@ -50,9 +52,7 @@ SATtrain = SATimage[-testcases,]
 
 
 
-
-a)  Compare k-NN classification and Naïve Bayes classification for predicting the test cases 
-     in SATtest. (10 pts.)
+## Comparing k-NN classification and Naïve Bayes classification for predicting the test cases in SATtest
 
 Mounting Libraries
 
@@ -62,9 +62,7 @@ require(class)
 require(klaR)
 ```
 
-Nearest Neighbor classification.
-
-missclassification function
+Nearest Neighbor classification missclassification function:
 
 ```{r}
 misclass = function(fit,y) {
@@ -86,7 +84,7 @@ cat("\n")
 Scaling was considered, but since the variables are all in the same scale, it was deemed unescescary.
 
 
-Nearest Neighbor Classification:
+### Nearest Neighbor Classification:
 
 Starting with just a simple kn = 1 model
 ```{r}
@@ -193,7 +191,7 @@ yhat3w = predict(sat.sknn3w,newdata=SATtest)
 
 misclass(yhat3w$class,SATtest$class)
 ```
-Immeidate results aren't boading well, but perhaps this changes with weight increases.
+Immediate results aren't boading well, but perhaps this changes with weight increases.
 
 
 ```{r}
@@ -340,7 +338,7 @@ misclass(yhatD2,SATtest$class)
 Overall, from the simplest model, we improved classification performance by around 2%.
 
 
-Naive Bayes:
+### Naive Bayes:
 
 Packages
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -420,14 +418,14 @@ sat.NB = NaiveBayes(class~.,data=SATtrain, usekernel = T, bw = T)
 Missclassification Rate = 18.3%
 
 
-b)  Use Split-Sample Monte Carlo cross-validation to compare k-NN and Naïve Bayes to 
-      compare these methods of classification.  Note when running this you can use the entire 
-      dataset, i.e. SATimage. (10 pts.)
+## Monte Carlo Cross-Validation
 
+Using Split-Sample Monte Carlo cross-validation to compare k-NN and Naïve Bayes to compare these methods of classification. 
 
 First, we will look at our k-NN model.
 
-Monte Carlo Function for k-NN:
+### Monte Carlo Function for k-NN:
+
 ```{r}
 kknn.sscv = function(train,y=train[,1],B=25,p=.333,kmax=3,kernel="optimal",distance=2) {
   y = as.factor(y)
@@ -449,6 +447,7 @@ kknn.sscv = function(train,y=train[,1],B=25,p=.333,kmax=3,kernel="optimal",dista
 ```
 
 Result:
+
 ```{r}
 #results = kknn.sscv(SATimage,B=100,kmax=3,kernel="triweight", distance = 1, p = 0.33)
 
@@ -457,10 +456,10 @@ Result:
    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 0.08808 0.09756 0.10196 0.10159 0.10586 0.11856 
 
-Over 100 iterations, it seems that our observed metric of 8.3% missclassification was on the low end for a model of that type. Still, averaging about 11% still is not horrible, but the result was not what one might have fully hoped for.
+Over 100 iterations, it seems that our observed metric of 8.3% missclassification was on the low end for a model of that type. Still, averaging about 11% is not horrible, but the result was not what one might have fully hoped for.
 
 
-Monte Carlo Function for Naive Bayes
+### Monte Carlo Function for Naive Bayes
 ```{r}
 nB.cv = function(X,y,B=25,p=.333,laplace=0) {
 y = as.factor(y)
@@ -483,6 +482,7 @@ for (i in 1:B) {
 ```
 
 Result:
+
 ```{r}
 #results2 = nB.cv(SATimage[,-1],SATimage[,1],B=100)
 
@@ -494,7 +494,8 @@ Result:
 Naive-Bayes peformed similarly, being slightly worse through 100 passes in a Monte Carlo function. However, it still holds true that our k-NN model is roughly twice as effective than Naive-Bayes using missclassification as our chosen metric, with the average pass for Bayes garnering wrong answers anout 20% of the time compared to 10% from k-NN.
 
 
-PROBLEM 2 – CLASSIFYING MUSIC GENRE BASED ON AN AUDIO SAMPLE
+# CLASSIFYING MUSIC GENRE BASED ON AN AUDIO SAMPLE
+
 This dataset consists of 191 continuous variables measured from an audio sample from a piece of music.  All audio samples were of the same length timewise.  Your goal is to use these data to classify the genre of the piece of music into one of the following genres: Blues, Classical, Jazz, Metal, Pop, and Rock.  These data are contained in two files: GenreTrain.csv (n = 10,000 samples) and GenreTest.csv (m = 2,495 samples).   
 
 
@@ -526,6 +527,7 @@ gtrain = gtrain[-testcases2,]
 
 Starting out simple, we will use a procedure similar to the problem above to build an optimal k-NN model.
 
+### Nearest Neighbor Classification
 
 Simple kn = 1 model:
 ```{r}
@@ -1188,8 +1190,8 @@ Trying out other cv functions.
 
 [1] 0.07588157
 
-```{r}
-summary(g.tune2)
+```{r eval=FALSE, include=FALSE}
+#summary(g.tune2)
 ```
 
 k
@@ -1240,16 +1242,16 @@ With 100 passes, we seem to hover at a rate around 10%, which is a little worse 
 
 Based on all of the testing done and our model building procedure, we reccomend a fairly simple k-nn model that considers only 1 other nearest neighbor, uses are Minkowski distance paramter of 1, and a biweight (beta(3,3)) kernel. While a simple model may seem odd, given the diverse nature of audio signals associated with different genres as well as the fact that certain elements are guranteed to be present in all of them, a model that focuses on just a few key aspects could be expected to perform much better than one would otherwise expect.
 
-b)	Using the k-NN classification procedure you chose in part (a), submit the predicted genre for the test cases in a .csv file along with your assignment.  I will report on the accuracy of predictions.   (5 pts.)
+## Submitting Predictions
+
+Using the k-NN classification procedure we chose above, we are going to use our model to predict music genre on the test data set.
 
 
 ```{r}
 
 # g.knnD = train.kknn(GENRE~.,data=gtrain2,kn=1, kernel="biweight", distance = 1)
-# 
+
 # final_pred = predict(g.knnD,newdata=gtest)
-# 
-# View(final_pred)
 
 #write.csv(final_pred, file = "k-NN_audio_preidctions_Andrews_Weiczorek.csv")
 
@@ -1257,9 +1259,491 @@ b)	Using the k-NN classification procedure you chose in part (a), submit the pre
 ```
 
 
-Please let us know if there is anyway we could have improved our model building process.
+# TYPE OF OIL BASED FATTY ACID CONTENT
+
+## Data
+
+The file <b>Oils.csv</b> contains fatty acid content readings for samples of seven types of oils (pumpkin, sunflower, peanut, olive, soybean, rapeseed, and corn).  The fatty acids measured are: Palmitic, Stearic, Oleic, Linoleic, Linolenic, Eicosanoic, and Eicosenoic.  
+
+```{r}
+setwd(getwd())
+Oils =read.csv("Oils.csv")
+summary(Oils)
+```
+
+## Data Preparation
+
+### Train/Validation Split
+
+It wouldn't be wise to split the data into train and validation sets as we only have a total of 96 observations in the original dataset. The decision making factor for not splitting the data is
+the amount of observations representing each class. There is 7 classes of Type categorical variable. Splitting the dataset with stratifying the Type variable could be a potential problem-solver as it would keep the same proportion of observations belonging to each class. However, as we can see (below) the low level of counts of each class below, it is not doable to make each cateogry representative of the data if we attempted a train/validation set split.
+
+```{r}
+summary(Oils$Type)
+```
+
+### Standardizing 
+
+All our predicotrs are numeric variables. Their scales differ a little bit, and as we are going to be using k-nearest neighbors to classify our observations, we will be working with straight line distance metrics - so we are going to standardize our data (mean=0, stdev=1). It is crucial when using k-nearest neighbors approach.
+
+```{r}
+Oils[,2:8] = scale(Oils[,2:8])
+set.seed(888)
+```
+
+## Model building
+
+We will be using k-NN and Naïve Bayes to classify the training data. 
+
+### Unweighted kNN
+
+Let's start with a simple, unweighted k-NN classification model. For this, we will use sknn() function from the klaR library.
+
+Gamma parameter is a tunning parameter. Gamma = 0 gives us the unweighted model. As gamma increases, the more down-weighted we get, with weights dropping very fast.
+
+```{r}
+#Nearest Neighbors (k=1)
+oils.sknn = sknn(Type~., data = Oils, kn=1)
+```
+
+```{r}
+ypred = predict(oils.sknn)
+```
+
+predict() function returns two attributes: posterior and class. Posterior is a predicted probability of the observation being in each class; class gives us a predicted class.
+
+Let's look at the missclassfication rate using the following function:
+```{r}
+missclass = function(fit,y) {
+temp <- table(fit,y)
+cat("Table of Misclassification\n")
+cat("(row = predicted, col = actual)\n")
+print(temp)
+cat("\n\n")
+numcor <- sum(diag(temp))
+numinc <- length(y) - numcor
+mcr <- numinc/length(y)
+cat(paste("Misclassification Rate = ",format(mcr,digits=3)))
+cat("\n")
+}
+```
 
 
+```{r}
+#Nearest Neighbors (k=1)
+misclass(ypred$class,Oils$Type)
+```
+
+```{r}
+#Nearest Neighbors (k=2)
+oils.sknn = sknn(Type~., data = Oils, kn=2)
+misclass(predict(oils.sknn)$class,Oils$Type)
+```
+
+```{r}
+#Nearest Neighbors (k=3)
+oils.sknn = sknn(Type~., data = Oils, kn=3)
+misclass(predict(oils.sknn)$class,Oils$Type)
+```
+
+```{r}
+#Nearest Neighbors (k=4)
+oils.sknn = sknn(Type~., data = Oils, kn=4)
+misclass(predict(oils.sknn)$class,Oils$Type)
+```
+
+```{r}
+#Nearest Neighbors (k=5)
+oils.sknn = sknn(Type~., data = Oils, kn=5)
+misclass(predict(oils.sknn)$class,Oils$Type)
+```
+
+```{r}
+#Nearest Neighbors (k=6)
+oils.sknn = sknn(Type~., data = Oils, kn=6)
+misclass(predict(oils.sknn)$class,Oils$Type)
+```
+
+The model with k=1 nearest neighbor is performing the best. However, when we use 1-nearest neighbor classifier, there is a high likelihood we are encountering overfitting of our data. Estimating the probability based on a single sample (first closest neighbor) is sensitive to noise, missclassification, When we use larger k values, we increase the robustness of our model, as then our decision surface gets smoother. However, for larger k values, our missclassificaiton rate was increasing. 
+
+k=2 and k=3 were having the same performance. We are going to keep kn=3 in our model.
+Let's implement weighing into our model and see if that can improve it. We are not going to be considering kn=1 from now on.
+
+### Weighted kNN
+
+```{r}
+#Nearest Neighbors (k=2, gamma=1)
+oils.sknn = sknn(Type~., data = Oils, kn=3, gamma = 1)
+misclass(predict(oils.sknn)$class,Oils$Type)
+```
+
+```{r}
+#Nearest Neighbors (k=3, gamma=2)
+oils.sknn = sknn(Type~., data = Oils, kn=3, gamma=2)
+misclass(predict(oils.sknn)$class,Oils$Type)
+```
+
+```{r}
+#Nearest Neighbors (k=4, gamma=3)
+oils.sknn = sknn(Type~., data = Oils, kn=3, gamma = 3)
+misclass(predict(oils.sknn)$class,Oils$Type)
+```
+
+```{r}
+#Nearest Neighbors (k=5, gamma=4)
+oils.sknn = sknn(Type~., data = Oils, kn=3, gamma=4)
+misclass(predict(oils.sknn)$class,Oils$Type)
+```
+
+```{r}
+#Nearest Neighbors (k=4, gamma=1)
+oils.sknn = sknn(Type~., data = Oils, kn=4, gamma=1)
+misclass(predict(oils.sknn)$class,Oils$Type)
+```
+
+```{r}
+#Nearest Neighbors (k=5, gamma=1)
+oils.sknn = sknn(Type~., data = Oils, kn=5, gamma=1)
+misclass(predict(oils.sknn)$class,Oils$Type)
+```
+
+```{r}
+#Nearest Neighbors (k=6, gamma=1)
+oils.sknn = sknn(Type~., data = Oils, kn=6, gamma=1)
+misclass(predict(oils.sknn)$class,Oils$Type)
+```
+
+```{r}
+#Nearest Neighbors (k=6, gamma=2)
+oils.sknn = sknn(Type~., data = Oils, kn=6, gamma=2)
+misclass(predict(oils.sknn)$class,Oils$Type)
+```
+
+As seen above, using any combination of the number of nearest neighbors (kn = {1,6}) and gamma parameter (weighing), our missclassification rate is 0.
+
+### Distance metric Tunning
+
+Let's experiment with Minkowski distance metric.
+
+```{r}
+oils.kknn = train.kknn(Type~.,data=Oils, kn=3, kernel=c("optimal"), distance = 1)  
+misclass(predict(oils.kknn, newdata = Oils), Oils$Type)
+```
+
+```{r}
+oils.kknn = train.kknn(Type~.,data=Oils, kn=3, kernel=c("optimal"), distance = 2)  
+misclass(predict(oils.kknn, newdata = Oils), Oils$Type)
+```
+
+```{r}
+oils.kknn = train.kknn(Type~.,data=Oils, kn=3, kernel=c("optimal"), distance = 3)  
+misclass(predict(oils.kknn, newdata = Oils), Oils$Type)
+```
+
+Putting more emphasis on Mikowski distance isn't chaning the missclassificaiton rate, perhaps modifying the kernel will make a difference.
+
+### Kernel Tunning
+
+```{r}
+oils.kknn = train.kknn(Type~.,data=Oils, kn=3, kernel=c("triangular"), distance = 1, gamma = 1)  
+misclass(predict(oils.kknn, newdata = Oils), Oils$Type)
+```
+
+```{r}
+oils.kknn = train.kknn(Type~.,data=Oils, kn=3, kernel=c( "rectangular", "epanechnikov", "optimal", "triweight")) 
+misclass(predict(oils.kknn, newdata = Oils), Oils$Type)
+```
+
+```{r}
+oils.kknn = train.kknn(Type~.,data=Oils, kn=3,kernel=c("triangular", "rectangular", "epanechnikov", "optimal", "triweight", "gaussian"), distance = 1)
+misclass(predict(oils.kknn, newdata = Oils), Oils$Type)
+```
+
+Any of the weighted knn approaches give <b>NO missclassifications</b> on the training data. However we cannot know whether our model could be underfitting (having a high bias and low variance) or overfitting (low bias and high variance) as we are not predicting on a different training data set (validation set).
+
+### Parameter Grid Search
+
+As seen above, there is many many possible combinations to find optimal paramters. Let's use a very handy parameter grid search tool to have it find the best combination of tunning parameters for us.
+
+This function tune() is in the package called "e1071"
+
+First, we need to form our resposne vector 'y' and a data frame 'x' of our predictors.
+
+```{r}
+y = Oils[,1]
+x = Oils[,-1]
+```
+
+Here, we have to be using knn() function to fit kNN classifier. Parameter 'l' specifies the minimum vote for the definite decision when there is a tie. If it's null, there is a doubt (Unkown "?").
+
+```{r}
+require(e1071)
+tuned = tune.knn(x,y, k=2:15, tunecontrol = tune.control(sampling = "boot"), data = Oils)
+summary(tuned)
+```
+
+Seems like lower k values are classifying our problem better. Also, this function is not so useful as intially thought - it does not search for optimal weighting gamma parameter or kernels. It is good, however, for a quick look at the performance of different number of nearest neighbors.
+
+### Monte-Carlo Cross Validation for k-NN
+
+As we mentioned above, Cross Validation is very important to measure accuracy of our model and see whether we have an optimal bias-variance trade-off.
+
+We will randomly split the Oils data B times into training and validation sets using Monte-Carlo Cross Validation functions below.
+
+```{r}
+#For uing kknn()
+kknn.cv = function(train,y=train[,1],B=25,p=.333,kmax=3,kernel="optimal",distance=2) {
+  y = as.factor(y)
+  data = data.frame(y=y,train[,-1])
+  n = length(y)
+  cv <- rep(0,B)
+  leaveout = floor(n*p)
+  for (i in 1:B) {
+    sam <- sample(1:n,leaveout,replace=F)
+    fit <- train.kknn(y~.,data=data[-sam,],kmax=kmax,kernel=kernel,distance=distance)
+    ypred = predict(fit,newdata=data[sam,])
+    tab <- table(y[sam],ypred)
+    mc <- leaveout - sum(diag(tab))
+    cv[i] <- mc/leaveout
+  }
+  cv
+}
+
+#For using sknn()
+sknn.cv = function(train,y=train[,1],B=25,p=.333,k=3,gamma=0) {
+y = as.factor(y)
+data = data.frame(y,train)
+n = length(y)
+cv <- rep(0,B)
+leaveout = floor(n*p)
+for (i in 1:B) {
+        sam <- sample(1:n,leaveout,replace=F)
+        temp <- data[-sam,]
+        fit <- sknn(y~.,data=temp,kn=k,gamma=gamma)
+        pred = predict(fit,newdata=train[sam,])$class
+        tab <- table(y[sam],pred)
+        mc <- leaveout - sum(diag(tab))
+        cv[i] <- mc/leaveout
+        }
+  cv
+}
+
+
+```
+
+The data frame needs to have the response as the first variable for the functions above.
+
+#### For sknn
+
+train,y=train[,1],B=25,p=.333,k=3,gamma=0)
+```{r}
+set.seed(888)
+results = sknn.cv(Oils,B=25,k=3,gamma=0)
+summary(results)
+```
+
+```{r}
+set.seed(888)
+results = sknn.cv(Oils,B=500,k=3,gamma=1)
+summary(results)
+```
+
+```{r}
+set.seed(888)
+results = sknn.cv(Oils,B=500,k=3,gamma=2)
+summary(results)
+```
+
+```{r}
+set.seed(888)
+results = sknn.cv(Oils,B=500,k=5,gamma=2)
+summary(results)
+```
+
+Best metrics for k=3 with gamma=2 (M=0.01032) and k=5 with gamma=2 (M=0.0129)
+
+#### For kknn
+
+```{r}
+set.seed(888)
+results = kknn.cv(Oils,B=10,kmax=15,kernel="optimal")
+summary(results)
+```
+
+```{r}
+set.seed(888)
+results = kknn.cv(Oils,B=10,kmax=4,kernel="triangular")
+summary(results)
+```
+
+```{r}
+set.seed(888)
+results = kknn.cv(Oils,B=10,kmax=10,kernel="triangular",distance=1) 
+summary(results)
+```
+
+```{r}
+set.seed(888)
+results = kknn.cv(Oils,B=15,kmax=5,kernel="triangular",distance=1) 
+summary(results)
+```
+
+```{r}
+set.seed(888)
+results = kknn.cv(Oils,B=10,kmax=10,kernel=c("triangular", "rectangular", "epanechnikov", "optimal", "triweight", "gaussian"),distance=1)
+summary(results)
+```
+
+Metrics for sknn were of better performance.
+
+
+### Naive Bayes
+
+Which type of Oils has the highest posterior probability of being observed given the data?
+fL = tunning parameter Laplace
+
+
+#### Normal Distribution
+
+Which of the fatty acids have the best discriminatory ability in classying which type of Oil it is? Let's look at two examples.
+
+```{r warning=F}
+boxqq(Palmitic~Type, data=Oils)
+```
+
+High levels are associated with the given type. For example, for Palmitic fatty acid, we can see it would most likley be associated with Type D. And vice-versa, if the Linoleic levels are low, there is a good chance, they are associated with Type D (as seen below).
+
+For Palmitic, there is a tiny bit of right skewness for Type B and left skewness for Type A and D (with D seeming to have an outlier). 
+
+```{r warning=F}
+boxqq(Linoleic~Type, data=Oils)
+```
+
+For Linoleic fatty acid content, normality looks pretty okay across the seven Type categories (Type F looks a bit skewed right).
+
+
+```{r warning=F}
+boxqq(Stearic~Type, data=Oils)
+```
+
+For Stearic fatty acid content, we see that the Type A and B are right skewed.
+
+
+```{r warning=F}
+boxqq(Oleic~Type, data=Oils)
+```
+
+For Oleic fatty acid content, we see that the Types follow the normal QQ reference lines (Type D seems left skewed)
+
+```{r warning=F}
+boxqq(Linolenic~Type, data=Oils)
+```
+
+Here, for Linolenic, Type F seems to be right skewed.
+
+
+```{r warning=FALSE}
+boxqq(Eicosanoic~Type, data=Oils)
+```
+
+For Eicosanoic fatty acid content, we can see that for Type A, there is a huge outlier. Type B, E, and F are skewed left and Type D is skewed right.
+
+```{r warning=F}
+boxqq(Eicosenoic~Type, data=Oils)
+```
+
+Normality of Eicosenoic looks like being left skewed for Type F and right skewed for Type C.
+
+
+We keep everything standardized (mean=0 and stddev=1)
+```{r}
+require(s20x)
+set.seed(888)
+oils.nb = naiveBayes(Type~., data = Oils, laplace = 1)
+ypred = predict(oils.nb, newdata = Oils[,-1], type = "raw") # type="raw" is giving probability
+head(ypred)
+```
+
+Giving the estimated probabiliy for each of the observation being each Type. We want to chose the one that is the largest. 
+
+Observation from 1 to 6 given above (as rows). The first one gets classified as being of Type G, the second one gets classified as being of Type D, the third one gets classified as being of Type E, the fourth one gets classified as being of Type D, the fifth one gets classified as being of Type E, and the sixth one gets classified as being of Type F.
+
+--The interpretation would work like that if there wasn't the beautiful and odd Type A column - it is classifying everything to its Type A with probabilites being 1...?
+
+If you do not type in type="raw" in predict() we would get teh acutal class the predicates belong to. Let's look into the missclassification rate:
+
+```{r}
+ypred = predict(oils.nb, newdata = Oils[,-1]) #getting classes
+misclass(ypred,Oils$Type)
+```
+
+We are getting the same missclassification rate (1.04%) at this point as we were getting with the unweighted kNN (k=3).
+
+### Monte-Carlo Cross Validation for Naive Bayes
+```{r}
+nB.cv = function(X,y,B=25,p=.333,laplace=0) {
+y = as.factor(y)
+data = data.frame(y,X)
+n = length(y)
+cv <- rep(0,B)
+leaveout = floor(n*p)
+for (i in 1:B) {
+        sam <- sample(1:n,leaveout,replace=F)
+        temp <- data[-sam,]
+        fit <- naiveBayes(y~.,data=temp,laplace=laplace)
+        pred = predict(fit,newdata=X[sam,])
+        tab <- table(y[sam],pred)
+        mc <- leaveout - sum(diag(tab))
+        cv[i] <- mc/leaveout
+        }
+  cv
+}
+```
+
+Let's use the Monte-Carlo Cross-Validation, randomly splitting Oils data B times.
+
+```{r}
+set.seed(888)
+X = Oils[,-1]
+y = Oils[,1]
+results = nB.cv(X, y, B=500, laplace = 1)
+summary(results)
+```
+
+On average, we are getting about 8.6% missclassified cases.
+
+### kNN final model:
+
+```{r}
+set.seed(888)
+results = sknn.cv(Oils,B=500,k=3,gamma=1)
+summary(results)
+```
+
+
+```{r}
+set.seed(888)
+results = sknn.cv(Oils,B=500,k=5,gamma=2)
+summary(results)
+```
+
+Missclassification rate (on average), 2.09% (k=3, gamma=1) and 1.97% (k=5, gamma=2)
+
+### Naive Bayes final mode:
+
+```{r}
+set.seed(888)
+X = Oils[,-1]
+y = Oils[,1]
+results = nB.cv(X, y, B=500, laplace = 1)
+summary(results)
+```
+
+Missclassification rate (on average), 8.6%
+
+Naive Bayes may be more suited for categorical predictors, not numeric ones (our Oils data has all numeric predictors).
+
+k-NN is the winner (the data needs to have more observations to ensure quality of representation of each Type category).
 
 
 
