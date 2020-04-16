@@ -2,12 +2,12 @@ SATELLITE IMAGE DATA
 ====================
 
 - [Data Description](#data-description)
-- [Data Description](#K-NN-and-Naïve Bayes-Classification-Models)
-- [Data Description](#Nearest-Neighbor-Classification)
-- [Data Description](#Naïve-Bayes)
-- [Data Description](#Monte-Carlo-Cross-Validation)
-- [Data Description](#Monte-Carlo-Function-for-k-NN)
-- [Data Description](#Monte-Carlo-Function-for-Naive-Bayes)
+- [K-NN and Naïve Bayes Classification Models](#K-NN-and-Naïve-Bayes-Classification-Models)
+- [Nearest-Neighbor-Classification](#Nearest-Neighbor-Classification)
+- [Naïve-Bayes](#Naïve-Bayes)
+- [Monte-Carlo-Cross-Validation](#Monte-Carlo-Cross-Validation)
+- [Monte-Carlo-Cross-Validation for k-NN](#Monte-Carlo-Function-for-k-NN)
+- [Monte-Carlo-Cross-Validation for Naive Bayes](#Monte-Carlo-Function-for-Naive-Bayes)
 
 
 Data Description
