@@ -49,11 +49,6 @@ Simple kn = 1 model:
 # misclass(g.yhat$class,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 393 1 15 7 4 2 Classical 5 872 100 4
-4 6 Jazz 4 30 658 3 14 18 Metal 0 0 4 229 3 9 Pop 1 0 1 3 376 6 Rock 1 1
-17 7 14 521
-
 Misclassification Rate = 0.0852
 
 It’s a strong start at only 8.5% missclassification, but with
@@ -67,11 +62,6 @@ start by finding the optimal number of neighbors.
 # misclass(g.yhat$class,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 390 3 18 7 6 6 Classical 6 871 129 3
-6 8 Jazz 6 28 619 5 12 28 Metal 0 0 2 224 3 8 Pop 2 1 3 2 371 7 Rock 0 1
-24 12 17 505
-
 Misclassification Rate = 0.106
 
 ``` r
@@ -80,11 +70,6 @@ Misclassification Rate = 0.106
 # 
 # misclass(g.yhat$class,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 389 1 14 8 5 6 Classical 10 879 128
-3 6 9 Jazz 5 23 633 4 13 24 Metal 0 0 1 230 4 5 Pop 0 0 3 3 369 6 Rock 0
-1 16 5 18 512
 
 Misclassification Rate = 0.0963
 
@@ -95,11 +80,6 @@ Misclassification Rate = 0.0963
 # misclass(g.yhat$class,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 386 2 13 8 6 10 Classical 13 878 149
-4 5 11 Jazz 5 24 607 3 21 25 Metal 0 0 4 228 3 8 Pop 0 0 4 2 365 7 Rock
-0 0 18 8 15 501
-
 Misclassification Rate = 0.11
 
 ``` r
@@ -108,11 +88,6 @@ Misclassification Rate = 0.11
 # 
 # misclass(g.yhat$class,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 385 2 10 8 5 9 Classical 12 883 151
-6 6 10 Jazz 5 19 611 3 13 22 Metal 0 0 3 226 6 2 Pop 2 0 4 3 368 7 Rock
-0 0 16 7 17 512
 
 Misclassification Rate = 0.104
 
@@ -123,11 +98,6 @@ Misclassification Rate = 0.104
 # misclass(g.yhat$class,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 380 3 14 9 6 12 Classical 16 881 165
-5 8 14 Jazz 7 20 592 3 15 26 Metal 0 0 4 227 4 6 Pop 1 0 3 2 359 7 Rock
-0 0 17 7 23 497
-
 Misclassification Rate = 0.119
 
 ``` r
@@ -136,11 +106,6 @@ Misclassification Rate = 0.119
 # 
 # misclass(g.yhat$class,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 377 4 15 11 4 13 Classical 18 877
-190 6 7 15 Jazz 9 23 567 2 16 27 Metal 0 0 2 223 5 9 Pop 0 0 3 2 362 8
-Rock 0 0 18 9 21 490
 
 Misclassification Rate = 0.131
 
@@ -155,11 +120,6 @@ we will try to optimize weighting for our predictive model.
 # misclass(g.yhat$class,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 393 1 15 7 4 2 Classical 5 872 100 4
-4 6 Jazz 4 30 656 2 14 18 Metal 0 0 4 229 3 9 Pop 1 0 1 3 376 6 Rock 1 1
-17 7 13 521
-
 Misclassification Rate = 0.0858
 
 ``` r
@@ -168,11 +128,6 @@ Misclassification Rate = 0.0858
 # 
 # misclass(g.yhat$class,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 392 1 11 7 3 2 Classical 5 870 94 4
-4 6 Jazz 4 30 649 2 12 18 Metal 0 0 4 229 3 9 Pop 1 0 1 2 374 6 Rock 1 1
-17 7 13 521
 
 Misclassification Rate = 0.0894
 
@@ -183,11 +138,6 @@ Misclassification Rate = 0.0894
 # misclass(g.yhat$class,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 391 1 10 6 3 2 Classical 5 864 87 3
-3 6 Jazz 4 30 621 0 12 16 Metal 0 0 2 229 3 9 Pop 1 0 1 2 373 5 Rock 1 1
-16 7 13 521
-
 Misclassification Rate = 0.1
 
 ``` r
@@ -196,11 +146,6 @@ Misclassification Rate = 0.1
 # 
 # misclass(g.yhat$class,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 384 1 8 5 2 2 Classical 3 847 74 3 0
-6 Jazz 3 23 589 0 9 14 Metal 0 0 2 227 3 8 Pop 1 0 1 2 363 3 Rock 1 1 16
-7 13 520
 
 Misclassification Rate = 0.121
 
@@ -211,11 +156,6 @@ Misclassification Rate = 0.121
 # misclass(g.yhat$class,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 379 1 6 4 2 1 Classical 2 809 47 2 0
-6 Jazz 3 18 544 0 8 12 Metal 0 0 1 226 3 8 Pop 0 0 0 2 336 3 Rock 1 1 15
-6 12 518
-
 Misclassification Rate = 0.156
 
 ``` r
@@ -224,11 +164,6 @@ Misclassification Rate = 0.156
 # 
 # misclass(g.yhat$class,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 360 1 5 4 2 1 Classical 2 774 37 0 0
-5 Jazz 3 16 499 0 5 11 Metal 0 0 0 225 3 8 Pop 0 0 0 2 303 2 Rock 1 1 14
-6 8 508
 
 Misclassification Rate = 0.199
 
@@ -239,11 +174,6 @@ Misclassification Rate = 0.199
 # misclass(g.yhat$class,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 347 0 1 3 1 1 Classical 2 727 28 0 0
-4 Jazz 1 15 450 0 3 8 Metal 0 0 0 221 3 8 Pop 0 0 0 2 260 2 Rock 0 1 9 5
-3 494
-
 Misclassification Rate = 0.25
 
 ``` r
@@ -252,11 +182,6 @@ Misclassification Rate = 0.25
 # 
 # misclass(g.yhat$class,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 330 0 1 2 1 0 Classical 0 665 19 0 0
-3 Jazz 1 12 393 0 3 7 Metal 0 0 0 218 3 8 Pop 0 0 0 2 226 0 Rock 0 0 8 5
-1 485
 
 Misclassification Rate = 0.305
 
@@ -267,11 +192,6 @@ Misclassification Rate = 0.305
 # misclass(g.yhat$class,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 308 0 0 2 1 0 Classical 0 615 11 0 0
-1 Jazz 0 7 333 0 2 6 Metal 0 0 0 214 2 5 Pop 0 0 0 0 199 0 Rock 0 0 8 5
-1 473
-
 Misclassification Rate = 0.357
 
 ``` r
@@ -280,11 +200,6 @@ Misclassification Rate = 0.357
 # 
 # misclass(g.yhat$class,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 284 0 0 1 0 0 Classical 0 548 9 0 0
-1 Jazz 0 5 283 0 2 4 Metal 0 0 0 209 0 5 Pop 0 0 0 0 170 0 Rock 0 0 7 3
-1 461
 
 Misclassification Rate = 0.413
 
@@ -301,11 +216,6 @@ will prove more bountiful.
 # 
 # misclass(yhatDg,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 394 0 8 5 3 1 Classical 6 879 116 4
-3 8 Jazz 3 25 659 0 16 15 Metal 0 0 1 232 2 4 Pop 1 0 1 2 378 6 Rock 0 0
-10 10 13 528
 
 Misclassification Rate = 0.0789
 
@@ -329,11 +239,6 @@ improvement we might find.
 # misclass(yhatDg,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 393 1 15 7 5 1 Classical 6 872 102 4
-3 7 Jazz 4 30 657 3 14 18 Metal 0 0 3 229 3 9 Pop 0 0 1 3 375 6 Rock 1 1
-17 7 15 521
-
 Misclassification Rate = 0.0858
 
 ``` r
@@ -342,11 +247,6 @@ Misclassification Rate = 0.0858
 # 
 # misclass(yhatDg,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 384 5 19 8 4 2 Classical 8 869 117 4
-5 9 Jazz 7 29 634 4 11 20 Metal 1 0 2 225 3 9 Pop 3 0 3 1 380 4 Rock 1 1
-20 11 12 518
 
 Misclassification Rate = 0.0969
 
@@ -357,11 +257,6 @@ Misclassification Rate = 0.0969
 # misclass(yhatDg,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 383 8 19 10 4 5 Classical 10 862 132
-3 7 11 Jazz 8 33 618 5 13 24 Metal 1 0 2 222 3 10 Pop 1 1 4 2 376 6 Rock
-1 0 20 11 12 506
-
 Misclassification Rate = 0.11
 
 ``` r
@@ -370,11 +265,6 @@ Misclassification Rate = 0.11
 # 
 # misclass(yhatDg,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 382 11 25 10 3 4 Classical 10 852
-135 5 7 11 Jazz 9 39 602 4 17 30 Metal 1 0 2 217 3 12 Pop 1 2 8 2 372 8
-Rock 1 0 23 15 13 497
 
 Misclassification Rate = 0.123
 
@@ -385,11 +275,6 @@ Misclassification Rate = 0.123
 # misclass(yhatDg,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 380 12 24 12 6 6 Classical 11 852
-148 5 8 12 Jazz 10 38 591 4 16 33 Metal 1 0 2 217 3 13 Pop 1 2 9 2 367
-10 Rock 1 0 21 13 15 488
-
 Misclassification Rate = 0.131
 
 ``` r
@@ -398,11 +283,6 @@ Misclassification Rate = 0.131
 # 
 # misclass(yhatDg,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 376 11 29 11 6 6 Classical 15 848
-159 4 10 14 Jazz 11 40 579 5 16 37 Metal 0 0 0 214 3 16 Pop 1 4 6 4 361
-9 Rock 1 1 22 15 19 480
 
 Misclassification Rate = 0.143
 
@@ -413,11 +293,6 @@ Misclassification Rate = 0.143
 # misclass(yhatDg,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues cv 13 27 13 7 6 Classical 14 843 161
-5 10 13 Jazz 11 42 574 4 12 35 Metal 1 0 0 208 3 17 Pop 3 5 11 4 365 11
-Rock 1 1 22 19 18 480
-
 Misclassification Rate = 0.147
 
 ``` r
@@ -426,11 +301,6 @@ Misclassification Rate = 0.147
 # 
 # misclass(yhatDg,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 369 14 27 13 9 6 Classical 17 839
-161 5 10 13 Jazz 12 45 572 4 13 35 Metal 1 0 0 206 3 16 Pop 3 5 12 5 362
-12 Rock 2 1 23 20 18 480
 
 Misclassification Rate = 0.152
 
@@ -441,11 +311,6 @@ Misclassification Rate = 0.152
 # misclass(yhatDg,gval$GENRE)
 ```
 
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 367 14 30 13 10 7 Classical 16 838
-163 5 10 14 Jazz 14 46 568 4 14 36 Metal 1 0 0 207 3 17 Pop 3 5 12 5 360
-12 Rock 3 1 22 19 18 476
-
 Misclassification Rate = 0.155
 
 ``` r
@@ -454,11 +319,6 @@ Misclassification Rate = 0.155
 # 
 # misclass(yhatDg,gval$GENRE)
 ```
-
-Table of Misclassification (row = predicted, col = actual) y fit Blues
-Classical Jazz Metal Pop Rock Blues 365 13 32 14 11 7 Classical 16 839
-165 5 10 14 Jazz 16 45 563 4 14 39 Metal 1 0 1 207 3 16 Pop 3 5 12 4 359
-13 Rock 3 2 22 19 18 473
 
 Misclassification Rate = 0.158
 
@@ -481,7 +341,8 @@ to try and have it search for optimal paramters.
 #summary(g.tune)
 ```
 
-k <int> error <dbl> dispersion <dbl> 1 0.1006017 0.008796545  
+k <int> error <dbl> dispersion <dbl> 
+1 0.1006017 0.008796545  
 2 0.1259869 0.005100039  
 3 0.1319405 0.009213037  
 4 0.1370575 0.006859476  
@@ -502,7 +363,8 @@ Trying out other cv functions.
 
 \[1\] 0.07588157
 
-k <int> error <dbl> dispersion <dbl> 1 0.07588157 0.009671225  
+k <int> error <dbl> dispersion <dbl> 
+1 0.07588157 0.009671225  
 2 0.09537771 0.011274021  
 3 0.09957562 0.012750349  
 4 0.10706785 0.015673815  
