@@ -1,3 +1,23 @@
+# NIT Octane
+
+- [Correlation structure](#Correlation-structure)
+- [Principal Component Regression](#Principal-Component-Regression)
+- [Check optimal \# of component predictions](#Check optimal-\#-of-component-predictions)
+- [PCR Loadings](#PCR-Loadings)
+- [Fitting final PCR model](#Fitting-final-PCR-model)
+
+- [Partial Least Squares Regression (PLS)](#Partial-Least-Squares-Regression-(PLS))
+- [PLS Loadings](#PLS-Loadings)
+- [Fitting final PLS model](#Fitting-final-PLS-model)
+
+- [Monte Carlo Cross Validation](#Monte-Carlo-Cross-Validation)
+- [PCR](#PCR)
+- [PLS](#PLS)
+- [Final Model Compatison](#Final-Model-Comparison)
+
+
+
+
 ``` r
 setwd("~/OneDrive - MNSCU/myGithub/Supervised_Learning/Multiple_Linear_Regression/MachineLearning-SupervisedLearning/PrincipalComponentRegression")
 data(gasoline)
@@ -24,7 +44,7 @@ The graph above shows how the value of spectral intensity changes based
 on the variables in the data.
 
 Correlation structure
-=====================
+---------------------
 
 ``` r
 pairs.plus(gasoline.x[,1:10])
@@ -428,7 +448,7 @@ emphasize variables &gt;350 as much as PC1 on this figure (or PC2 from
 loadings of pcr).
 
 Fitting final PLS model
------------------------
+=======================
 
 ``` r
 mymodel = plsr(octane~scale(NIR),data=gasoline.train,ncomp=4)
