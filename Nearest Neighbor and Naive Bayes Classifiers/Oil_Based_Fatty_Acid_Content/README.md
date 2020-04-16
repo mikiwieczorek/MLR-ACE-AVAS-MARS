@@ -1,6 +1,12 @@
 TYPE OF OIL BASED FATTY ACID CONTENT
 ====================================
 
+[Data](Data)
+[Data Preparation][Data Preparation]
+[Train/Validation Split][Train/Validation Split]
+
+
+
 ``` r
 #Libraries:
 require(kknn)
