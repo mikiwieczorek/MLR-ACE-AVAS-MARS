@@ -1,10 +1,10 @@
 TYPE OF OIL BASED FATTY ACID CONTENT
 ====================================
 
-1. [Data](#data)
-2. [Data Preparation](#data-preparation)
-    - [Train/Validation Split](#train/validation-split)
-     - [Model Building](#model-building)
+- [Data](#data)
+- [Data Preparation](#data-preparation)
+- [Train/Validation Split](##train/validation-split)
+- [Model Building](#model-building)
 
 
 
