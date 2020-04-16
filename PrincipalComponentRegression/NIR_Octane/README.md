@@ -2,7 +2,7 @@
 
 - [Correlation structure](#Correlation-structure)
 - [Principal Component Regression](#Principal-Component-Regression)
-- [Check optimal \# of component predictions](#Check-optimal-\#-of-component-predictions)
+- [Check optimal number of component predictions](#Check-optimal-number-of-component-predictions)
 - [PCR Loadings](#PCR-Loadings)
 - [Fitting final PCR model](#Fitting-final-PCR-model)
 
@@ -189,8 +189,8 @@ dim(gasoline.train$NIR)
 
     ## [1]  50 401
 
-Check optimal \# of component predictions
-=========================================
+Check optimal number of component predictions
+=============================================
 
 Let’s explore the optimal number of components further with our oct.pcr
 model, where we are considering within ncomp=40.
