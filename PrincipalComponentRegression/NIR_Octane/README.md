@@ -2,7 +2,7 @@
 
 - [Correlation structure](#Correlation-structure)
 - [Principal Component Regression](#Principal-Component-Regression)
-- [Check optimal \# of component predictions](#Check optimal-\#-of-component-predictions)
+- [Check optimal \# of component predictions](#Check-optimal-\#-of-component-predictions)
 - [PCR Loadings](#PCR-Loadings)
 - [Fitting final PCR model](#Fitting-final-PCR-model)
 
@@ -44,7 +44,7 @@ The graph above shows how the value of spectral intensity changes based
 on the variables in the data.
 
 Correlation structure
----------------------
+=====================
 
 ``` r
 pairs.plus(gasoline.x[,1:10])
