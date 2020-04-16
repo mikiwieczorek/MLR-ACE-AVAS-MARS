@@ -1,6 +1,15 @@
 SATELLITE IMAGE DATA
 ====================
 
+- [Data Description](#data-description)
+- [Data Description](#K-NN-and-Naïve Bayes-Classification-Models)
+- [Data Description](#Nearest-Neighbor-Classification)
+- [Data Description](#Naïve-Bayes)
+- [Data Description](#Monte-Carlo-Cross-Validation)
+- [Data Description](#Monte-Carlo-Function-for-k-NN)
+- [Data Description](#Monte-Carlo-Function-for-Naive-Bayes)
+
+
 Data Description
 ================
 
@@ -114,7 +123,7 @@ cat("\n")
 Scaling was considered, but since the variables are all in the same
 scale, it was deemed unescescary.
 
-Nearest Neighbor Classification:
+Nearest Neighbor Classification
 ================================
 
 Starting with just a simple kn = 1 model
@@ -735,7 +744,7 @@ misclass(yhatD2,SATtest$class)
 Overall, from the simplest model, we improved classification performance
 by around 2%.
 
-Naïve Bayes:
+Naïve Bayes
 ============
 
 Packages
@@ -891,7 +900,7 @@ Naïve Bayes to compare these methods of classification.
 
 First, we will look at our k-NN model.
 
-Monte Carlo Function for k-NN:
+Monte Carlo Function for k-NN
 ------------------------------
 
 ``` r
@@ -920,9 +929,7 @@ Result:
 
 #summary(results)
 ```
-
-Min. 1st Qu. Median Mean 3rd Qu. Max. 0.08808 0.09756 0.10196 0.10159
-0.10586 0.11856
+Mean: 0.10159
 
 Over 100 iterations, it seems that our observed metric of 8.3%
 missclassification was on the low end for a model of that type. Still,
@@ -960,12 +967,7 @@ Result:
 #summary(results2)
 ```
 
-Min. 1st Qu. Median Mean 3rd Qu. Max. 0.1809 0.1963 0.2033 0.2031 0.2087
-0.2256
+Mean: 0.2031
 
-Naive-Bayes peformed similarly, being slightly worse through 100 passes
-in a Monte Carlo function. However, it still holds true that our k-NN
-model is roughly twice as effective than Naive-Bayes using
-missclassification as our chosen metric, with the average pass for Bayes
-garnering wrong answers anout 20% of the time compared to 10% from k-NN.
+Naive-Bayes peformed similarly, being slightly worse through 100 passes in a Monte Carlo function. However, it still holds true that our k-NN model is roughly twice as effective than Naive-Bayes using missclassification as our chosen metric, with the average pass for Bayes garnering wrong answers anout 20% of the time compared to 10% from k-NN.
 
