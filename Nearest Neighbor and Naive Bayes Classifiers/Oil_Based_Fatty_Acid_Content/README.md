@@ -3,7 +3,7 @@ TYPE OF OIL BASED FATTY ACID CONTENT
 
 1. [Data](#data)
 2. [Data Preparation](#data-preparation)
-    - [Train/Validation Split](#Train/Validation-Split)
+- [Train/Validation Split](#train/validation-split)
 
 
 
