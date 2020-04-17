@@ -2,7 +2,9 @@
 title: "NIR Spectra & Gasoline Octane"
 author: "Samuel Andrews & Mikolaj Wieczorek"
 date: "3/5/2020"
-output: word_document
+output:
+  md_document:
+    variant: markdown_github
 ---
 
 ```{r include=FALSE}
@@ -233,7 +235,6 @@ setwd("~/OneDrive - MNSCU/myGithub/Supervised_Learning/Multiple_Linear_Regressio
 data(gasoline)
 ```
 
-This data consits of n=30 subjects and 403 columns that represent genetic marker intensity measurments for 403 different genes.
 
 ```{r}
 gasoline.x = gasoline$NIR
@@ -248,7 +249,7 @@ title(main="Spectral Readings for Gasoline Data")
 
 The graph above shows how the value of spectral intensity changes based on the variables in the data.
 
-### Correlation structure
+# Correlation structure
 ```{r fig.height=10, fig.width=10}
 pairs.plus(gasoline.x[,1:10])
 pairs.plus(gasoline.x[,201:210])
@@ -270,9 +271,8 @@ Statplot(bcPower(gasoline$octane, 2))
 
 There is not much skewness prevailing. When aplpying a suggested optimal lambda=2 Box-Cox transformation, the skewness hasn't changed that much to apply the transformation on the response (octane).
 
-## PART B
+# Principal Component Regression
 
-Now use the pcr() function as shown in yarn example in your notes to fit a PCR model for these data.  What is the “optimal” # of components to use in your model? (4 pts.)
 
 ```{r}
 oct.pcr=pcr(octane~scale(NIR),data=gasoline,ncomp=40,validation="CV")
@@ -288,7 +288,7 @@ attributes(gasoline.train)
 dim(gasoline.train$NIR)
 ```
 
-### Check optimal # of component predictions
+# Check optimal # of component predictions
 
 Let's explore the optimal number of components further with our oct.pcr model, where we are considering within ncomp=40.
 
@@ -330,9 +330,10 @@ paste("RMSEP for testing, 4PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
 
 Optimal number of components to retain is 6, indeed, 6.
 
-## PART C
+# PCR Loadings
 
-Examine the loadings on the components you used in your model.  Use this plot to determine which NIR spectra load heavy on the 1st two principal components.  Summarize your findings.  (3 pts.)
+Let's examine the loadings on the components you used in your model.  
+
 ```{r}
 loadingplot(oct.pcr,comps=1:2,lty=1:2,lwd=2,legendpos="topright")
 ```
@@ -340,9 +341,9 @@ loadingplot(oct.pcr,comps=1:2,lty=1:2,lwd=2,legendpos="topright")
 Each pc comnponent takes pieces of variables. The loadings plot above depicts which component takes in which ranges of pieces of variables. PC1 contains pieces of variables 110-120 and 350-400. PC2 is similar to PC1 but it puts more emphasis on variables 110-120 and 350-400 than PC1. PC2 also contains a lot information about some of the 170-230 variables. 
 
 
-## PART D
+# Fitting final PCR model
 
-Using the optimal number of components chosen above, fit the model to these training data and predict the octane of the test cases using their NIR spectra.  What is the RMSEP using the training/test set approach? (4 pts.)
+Using the optimal number of components chosen above, we're fitting the model to these training data and predicting the octane of the test cases using their NIR spectra. 
 
 We picked ncomp=6.
 ```{r}
@@ -361,20 +362,10 @@ paste("RMSEP:", sqrt(mean((ypred-yact)^2)))
 ```
 
 
-
-
-
-
-
-
-
-
-
 # Partial Least Squares Regression (PLS)
 
-## PART E
 
-Now use the plsr() function as shown in yarn example in your notes to fit a PLS model for these data. What is the “optimal” # of components to use in your model? (4 pts.)
+Now, we are using the plsr() function.
 
 
 ```{r}
@@ -410,6 +401,7 @@ paste("RMSEP for testing, 5PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
 ypred = predict(oct.pls, ncomp = 6, newdata = gasoline.test)
 paste("RMSEP for testing, 6PCs:", sqrt(mean(ypred-gasoline.test$octane)^2))
 ```
+
 Based on the above using 5 components yields lowest RMSEP.
 
 We picked ncomp=5.
@@ -443,9 +435,9 @@ paste("RMSEP:", sqrt(mean((ypred-yact)^2)))
 ncomp=4, yileds RMSEP=.18.
 
 
-## PART F
+# PLS Loadings
 
-Examine the loadings on the components you used in your model.  Use this plot to determine which NIR spectra load heavy on the 1st two principal components.  Summarize your findings.  (3 pts.)
+Let's examine the loadings on the components you used in your model.
 
 ```{r}
 loadingplot(oct.pls,comps=1:2,legendpos="topright")
@@ -455,7 +447,7 @@ The two components explain about 88% of total variation (PC1=.65, PC2=.19). Here
 
 
 
-## PART G
+## Fitting final PLS model
 
 ```{r}
 mymodel = plsr(octane~scale(NIR),data=gasoline.train,ncomp=4)
@@ -468,11 +460,12 @@ paste("RMSEP:",sqrt(mean((ypred-yact)^2)))
 
 ```
 
-## PART H
+# Monte Carlo Cross Validation
 
-Estimate the RMSEP using Monte Carlo Cross-Validation (MCCV) using p=.80 for both PLS and PCR (8 pts.)
+Let's estimate the RMSEP using Monte Carlo Cross-Validation (MCCV) using p=.80 for both PLS and PCR.
 
-The code for the function pls.cv is shown below.  It takes the X’s, the response y, and the number of components to use in the PLS fit as the required arguments. Note the function computes RMSEP for each MC sample. You can modify this code to do the same for PCR.  Include the code you wrote for your pcr.cv() function.  You will want to change the number of components (ncomp) to those you found to be optimal above.
+The code for the function pls.cv is shown below.  It takes the X’s, the response y, and the number of components to use in the PLS fit as the required arguments. Note the function computes RMSEP for each MC sample. The code for the pcr.cv function is right after it.
+
 ```{r}
 pls.cv = function(X,y,ncomp=5,p=.667,B=100) {
 	n = length(y)
@@ -510,7 +503,7 @@ cv
 ```
 
 
-### PCR
+# PCR
 
 The final optimal number of components we chose for our Principal Component Regression model is ncomp=6.
 
@@ -519,7 +512,7 @@ final.pcr.cv = pcr.cv(gasoline$NIR, gasoline$octane, ncomp = 6, p=.80, B=1000)
 mean(final.pcr.cv)
 ```
 
-### PLS
+# PLS
 
 The final optimal number of components we chose for our Partial Least Squares Regression model is ncomp=5.
 
@@ -528,6 +521,8 @@ We ran the Monte Carlo Cross-Validation multiple times with ncomp=4 and ncomp=5 
 final.pls.cv = pls.cv(gasoline$NIR, gasoline$octane, ncomp = 5 , p=.80, B=1000)
 mean(final.pls.cv)
 ```
+
+# Final Model Comparison
 
 ```{r}
 df = data.frame(PCR.RMSEP = mean(final.pcr.cv), PLS.RMSEP = mean(final.pls.cv))

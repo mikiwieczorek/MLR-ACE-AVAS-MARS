@@ -236,7 +236,7 @@ y.valid = X.valid$formation_energy_ev_natom_log_y_plus_1
 #mtry=6, ntree=1000
 #mtry=6, ntree=350
 
-#Best combo is: mtry=5 and ntree=350
+#
 
 ####### Final randomForest model #######
 {cond.final = randomForest(formation_energy_ev_natom_log_y_plus_1~.,data=X.train,mtry=5,ntree=350, importance = T)
@@ -374,6 +374,7 @@ y.valid = X.valid$bandgap_energy_ev_log_y_plus_1
 # plot(cond.rf)
 # abline(h=0.000128,col="red",lwd=2)
 }
+
 ###### Compare best mtry and ntree combos #######                        
 #ntree of 50, 80, 100, 350
 
@@ -399,6 +400,9 @@ y.valid = X.valid$bandgap_energy_ev_log_y_plus_1
 #mtry=5, ntree=750
 
 #Best combo is: mtry=4 and ntree=1000
+
+
+
 
 
 ####### Final randomForest model #######

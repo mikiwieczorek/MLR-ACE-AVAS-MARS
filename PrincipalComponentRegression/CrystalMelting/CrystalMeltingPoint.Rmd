@@ -2,18 +2,20 @@
 title: "Assignment 5"
 author: "Samuel A, Mikolaj W"
 date: "March 6, 2020"
-output: word_document
+output:
+  md_document:
+    variant: markdown_github
 ---
 
-CRYSTAL MELTING POINT DATA
+# CRYSTAL MELTING POINT DATA
 
-In their 2005 paper “General Boiling Point Prediction Based on a Diverse Compound Data Set and Artificial Neural Networks”, Karthikeyan, Glen, and Bender examine methods for the prediction of melting points using a number of 2D and 3D descriptors that capture molecular physicochemical and other graph-based properties.  The melting point is a fundamental physicochemical property of a molecule that is controlled by both single-molecule properties and intermolecular interactions due to packing in the solid state.  Thus, it is difficult to predict, and previously only melting point models for clearly defined and smaller compound sets have been developed.   The data frame QSAR.melt contains data for 4401 compounds that can be used to develop a model for melting point.  There data are contained in the file QSAR Melting Points (subset).csv on the course website.
+In their 2005 paper “General Boiling Point Prediction Based on a Diverse Compound Data Set and Artificial Neural Networks”, Karthikeyan, Glen, and Bender examine methods for the prediction of melting points using a number of 2D and 3D descriptors that capture molecular physicochemical and other graph-based properties. The melting point is a fundamental physicochemical property of a molecule that is controlled by both single-molecule properties and intermolecular interactions due to packing in the solid state.  Thus, it is difficult to predict, and previously only melting point models for clearly defined and smaller compound sets have been developed. The data frame QSAR.melt contains data for 4401 compounds that can be used to develop a model for melting point.
 
-Goal:  Use PCR and PLS develop models and compare their ability to predict melting 
-           point.  
+Goal:  Use PCR and PLS develop models and compare their ability to predict melting point.  
 
 
 Packages:
+
 ```{r setup, include=FALSE}
 library(tidyr)
 library(dplyr)
@@ -29,7 +31,8 @@ require(corrplot)
 require(caret)
 ```
 
-Data Preperation:
+# Data Preperation
+
 ```{r}
 QSAR.melt = read.csv("Melting Point QSAR.csv")
 
@@ -50,8 +53,9 @@ qsar.test = QSAR[test,]
 ```
 
 
+# PCR Model
 
-a)	 Develop an “optimal” PCR model.  Justify your choice using cross-validation. (10 pts.)
+We are going to develop an “optimal” PCR model.
 
 Now we will look at a corrplot as well and generate a correlation matrix.
 ```{r}
@@ -261,7 +265,9 @@ paste("RMSEP:", sqrt(mean((ypred-yact)^2, na.rm = TRUE)))
 Using RMSEP as our metric, we can see that the sweet spot appears to be 66 principle components. While that is a lot, compared to the 203 variables we started with that is roughly a 67% reduction in the number or predictors while also dealing with any collineation that was present. Our optimal PCR model uses 66 components.
 
 
-b)	 Develop an “optimal” PLS model.  Justify your choice using cross-validation.  (10 pts.)
+# PLS Model
+
+We are going to develop an “optimal” PLS model.
 
 ```{r}
 qsar.pls = plsr(MTP~.,ncomp=40,validation="CV", scale = TRUE, data=qsar.train)
@@ -280,9 +286,11 @@ The only added conclusion we can make now is that it would take about 53 compone
 
 
 Looking at a plot of some internalally generated RMSEPs can help us make a decision as well.
+
 ```{r}
 plot(RMSEP(qsar.pls), legendpos = "topright")
 ```
+
 Looking at this plot, we can affirm our understanding based off of the raw numbers, as we begin to start getting diminshing returns around the late 20 values, with anything past it not really gaining anything substantial. From here, we can now to some simple cross-validation on a test set to narrow done to an optimal value.
 
 
@@ -390,9 +398,12 @@ paste("RMSEP:", sqrt(mean((ypred-yact)^2, na.rm = TRUE)))
 While not immediatley clear from our plots or numeric measure, based on actual cross-validaion our best metric was returned by a value an amount of components as little as 16. This makes sense given PLS's nature to return less then pcr, but the ability to reduce the dimensionality by nearly 92% is quite impressive. 16 components will be the basis for our optimal model.
 
 
-c)	 Use your “optimal” model for each method (PCR and PLS) to predict the melting point 
- of the test cases. Which modeling method performs the best when predicting the test 
- cases?  (10 pts.)
+
+# PCR and PLS
+
+Let's us our “optimal” model for each method (PCR and PLS) to predict the melting point of the test cases. 
+
+Which modeling method would perform the best when predicting the test cases?
 
 ```{r}
 
@@ -434,8 +445,7 @@ plot(ytest,ypred,xlab="Actual Test MTP",ylab="Predicted Test MTP")
 Based on the sums of sqaures of prediction error, we can see that the PLS model performed slightly better, which makes sense given that it had much more variable reduction  as well as more heavily focusing on the prediction of y then the organization of the x'compared to the pcr. However, the RMSE was ever so slightly in favor of the pcr. While the difference isn't major, as shown by the plots, the pls is likely better given its level of reduction. However there is likely still something to be gained from looking at the relevant loadings of the pcr model, as it may help organize the variables which could be useful for unsupervised applications.
 
 
-d)	 Use the pcr.cv and pls.cv functions to assess the predictive performance of these two  
- methods.  Summarize the results.  (10 pts.)
+# Monte Carlo and Results
 
 Monte-carlo cross-validation functions accounting for missing values.
 ```{r}
