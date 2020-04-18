@@ -1,0 +1,8 @@
+---
+title: "Tree-Based_Classification"
+author: "Samuel A, Mikolaj W"
+date: "April 17, 2020"
+output: word_document
+---
+
+
